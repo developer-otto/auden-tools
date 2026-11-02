@@ -1,0 +1,9 @@
+**/node_modules
+**/.next
+**/.turbo
+**/.data
+**/.local-tools
+**/.env*
+.git
+.pnpm-store
+design

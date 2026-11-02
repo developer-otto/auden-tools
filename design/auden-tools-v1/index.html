@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f6f7f5" />
+    <title data-i18n="Auden Tools — 日常工具，触手可及">Auden Tools — 日常工具，触手可及</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" id="sidebar">
+        <a href="#home" class="brand" aria-label="Auden Tools 首页" data-i18n-aria-label="Auden Tools 首页"><span class="brand-mark"><i></i><i></i><i></i><i></i></span><span>auden<span class="brand-light">.tools</span><small><span data-i18n="日常工具，触手可及">日常工具，触手可及</span></small></span></a>
+        <nav aria-label="主导航" data-i18n-aria-label="主导航">
+          <p class="nav-caption"><span data-i18n="工作空间">工作空间</span></p>
+          <button class="nav-item active" data-view="home"><span data-icon="grid"></span><span data-i18n="工具首页">工具首页</span><span class="nav-key">⌘ 1</span></button>
+          <button class="nav-item" data-filter="favorites"><span data-icon="star"></span><span data-i18n="我的收藏">我的收藏</span><span class="nav-count" id="favorite-count">3</span></button>
+          <button class="nav-item" data-filter="recent"><span data-icon="history"></span><span data-i18n="最近使用">最近使用</span></button>
+          <p class="nav-caption category-caption"><span data-i18n="工具分类">工具分类</span></p>
+          <button class="nav-item" data-category="time"><span data-icon="clock"></span><span data-i18n="时间与日期">时间与日期</span><span class="nav-count">3</span></button>
+          <button class="nav-item" data-category="convert"><span data-icon="arrows"></span><span data-i18n="换算与计算">换算与计算</span><span class="nav-count">2</span></button>
+          <button class="nav-item" data-category="text"><span data-icon="text"></span><span data-i18n="文本与开发">文本与开发</span><span class="nav-count">2</span></button>
+        </nav>
+        <div class="sidebar-bottom"><div class="quiet-note"><span class="little-spark">✳</span><p><span data-i18n="小工具，大有用处。">小工具，大有用处。</span></p><small><span data-i18n="把时间留给更重要的事。">把时间留给更重要的事。</span></small></div><button class="quick-search" id="quick-search"><span data-icon="search"></span><span data-i18n="快速查找">快速查找</span><kbd>⌘ K</kbd></button><div class="sidebar-footer"><span>Auden Tools <b>V1.0</b></span><button class="icon-btn" data-theme-toggle aria-label="切换深浅色" data-i18n-aria-label="切换深浅色"><span data-icon="sun"></span></button></div></div>
+      </aside>
+      <div class="main-shell">
+        <header class="topbar"><div class="breadcrumb"><button class="icon-btn mobile-menu" id="menu-toggle" aria-label="打开导航" data-i18n-aria-label="打开导航"><span data-icon="menu"></span></button><span><span data-i18n="工作空间">工作空间</span></span><span class="slash">/</span><strong id="breadcrumb-current"><span data-i18n="工具首页">工具首页</span></strong></div><div class="topbar-actions"><label class="language-switch"><span data-icon="globe"></span><select id="language-select" aria-label="界面语言" data-i18n-aria-label="界面语言"><option value="zh-CN" lang="zh-CN">简体中文</option><option value="zh-Hant" lang="zh-Hant">繁體中文</option><option value="en" lang="en">English</option><option value="ja" lang="ja">日本語</option><option value="ko" lang="ko">한국어</option></select></label><span class="prototype-label"><i></i><span data-i18n="UI 预览">UI 预览</span></span><button class="icon-btn" id="help-button" aria-label="预览说明" data-i18n-aria-label="预览说明"><span data-icon="help"></span></button><span class="topbar-divider"></span><span class="avatar">A</span></div></header>
+        <main id="main-content"></main>
+        <footer class="page-footer"><span>© 2026 Auden Tools</span><span><span data-i18n="为每一个日常，省一点时间。">为每一个日常，省一点时间。</span><span class="footer-dot">✳</span></span></footer>
+      </div>
+    </div>
+    <div class="toast" role="status" aria-live="polite" id="toast"></div>
+    <dialog id="search-dialog"><div class="dialog-search"><span data-icon="search"></span><input id="global-search" placeholder="搜索工具名称或关键词…" data-i18n-placeholder="搜索工具名称或关键词…" aria-label="搜索全部工具" data-i18n-aria-label="搜索全部工具" /><button class="key-button" data-close-dialog>ESC</button></div><div class="dialog-results" id="dialog-results"></div><div class="dialog-footer"><span data-i18n="快速到达你需要的工具">快速到达你需要的工具</span><span><span data-i18n="↵ 打开 · esc 关闭">↵ 打开 · esc 关闭</span></span></div></dialog>
+    <dialog id="city-dialog" class="catalog-dialog" aria-labelledby="city-dialog-title"><div class="modal-heading"><div><h2 id="city-dialog-title"><span data-i18n="管理世界时间">管理世界时间</span></h2><p class="muted"><span data-i18n="24 个常用城市，找到你关心的时区。">24 个常用城市，找到你关心的时区。</span></p></div><button class="icon-btn" data-close-dialog aria-label="关闭" data-i18n-aria-label="关闭"><span data-icon="close"></span></button></div><div class="catalog-search"><span data-icon="search"></span><input id="city-search" type="search" aria-label="搜索城市或时区" data-i18n-aria-label="搜索城市或时区" placeholder="搜索城市、国家/地区或时区…" data-i18n-placeholder="搜索城市、国家/地区或时区…"/></div><div class="catalog-filters" id="city-filters"></div><div class="catalog-options" id="city-options"></div><div class="catalog-footer"><span id="city-selection-count" aria-live="polite"></span><div><button class="text-btn" data-city-preset="all"><span data-i18n="选择全部">选择全部</span></button><button class="button primary small" data-close-dialog><span data-i18n="完成">完成</span></button></div></div></dialog>
+    <dialog id="currency-dialog" class="catalog-dialog" aria-labelledby="currency-dialog-title"><div class="modal-heading"><div><h2 id="currency-dialog-title"><span data-i18n="选择货币">选择货币</span></h2><p class="muted"><span data-i18n="24 种常用货币，覆盖日常兑换与旅行。">24 种常用货币，覆盖日常兑换与旅行。</span></p></div><button class="icon-btn" data-close-dialog aria-label="关闭" data-i18n-aria-label="关闭"><span data-icon="close"></span></button></div><div class="catalog-search"><span data-icon="search"></span><input id="currency-search" type="search" aria-label="搜索货币" data-i18n-aria-label="搜索货币" placeholder="搜索货币代码、中文名称或国家/地区…" data-i18n-placeholder="搜索货币代码、中文名称或国家/地区…"/></div><div class="catalog-filters" id="currency-filters"></div><div class="catalog-options" id="currency-options"></div><div class="catalog-footer"><span id="currency-selection-count" aria-live="polite"></span><div><button class="text-btn" id="currency-select-all"><span data-i18n="选择全部">选择全部</span></button><button class="button primary small" data-close-dialog><span data-i18n="完成">完成</span></button></div></div></dialog>
+    <dialog id="timezone-dialog" class="catalog-dialog" aria-labelledby="timezone-dialog-title"><div class="modal-heading"><div><h2 id="timezone-dialog-title"><span data-i18n="选择时区">选择时区</span></h2><p class="muted"><span data-i18n="24 个城市时区 + UTC，支持夏令时。">24 个城市时区 + UTC，支持夏令时。</span></p></div><button class="icon-btn" data-close-dialog aria-label="关闭" data-i18n-aria-label="关闭"><span data-icon="close"></span></button></div><div class="catalog-search"><span data-icon="search"></span><input id="timezone-search" type="search" aria-label="搜索转换时区" data-i18n-aria-label="搜索转换时区" placeholder="搜索城市、国家/地区、UTC 或 IANA 时区…" data-i18n-placeholder="搜索城市、国家/地区、UTC 或 IANA 时区…"/></div><div class="catalog-filters" id="timezone-filters"></div><div class="catalog-options" id="timezone-options"></div><div class="catalog-footer"><span><span data-i18n="UTC 偏移按当前日期显示，转换使用输入日期的时区规则。">UTC 偏移按当前日期显示，转换使用输入日期的时区规则。</span></span></div></dialog>
+    <script src="./i18n.js"></script>
+    <script src="./catalog.js"></script>
+    <script src="./time-utils.js"></script>
+    <script src="./decimal-utils.js"></script>
+    <script src="./json-utils.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,14 @@
+# Build from the repository root and push this image to Vercel Container Registry.
+# VCR requires linux/amd64. No credentials or user files are baked into this image.
+FROM node:24-bookworm-slim
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg libreoffice-writer fonts-noto-cjk fonts-liberation ca-certificates sudo \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /opt/auden
+RUN npm install --omit=dev --no-audit --no-fund pdf-lib@1.17.1 sharp@0.35.5
+COPY apps/web/lib/conversions.ts ./lib/conversions.ts
+COPY apps/web/lib/server/conversions/config.ts apps/web/lib/server/conversions/engines.ts ./lib/server/conversions/
+COPY apps/web/scripts/sandbox-runner.ts ./scripts/sandbox-runner.ts
+RUN mkdir -p /vercel/sandbox && chmod 1777 /vercel/sandbox
+USER node
+# Sandbox starts the runner explicitly; it does not invoke image CMD/ENTRYPOINT.

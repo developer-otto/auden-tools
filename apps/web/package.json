@@ -3,22 +3,38 @@
   "version": "0.1.0",
   "type": "module",
   "private": true,
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "dev": "next dev --port 3000",
     "build": "next build",
     "start": "next start",
     "lint": "eslint --max-warnings 0",
-    "check-types": "next typegen && tsc --noEmit"
+    "check-types": "next typegen && tsc --noEmit",
+    "test": "node --test tests/*.test.ts",
+    "test:http": "node tests/conversions-http.mjs",
+    "worker": "node --env-file-if-exists=.env.local scripts/conversion-worker.ts",
+    "db:migrate": "node --env-file-if-exists=.env.local scripts/migrate-conversions.ts"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.2.0",
     "@repo/ui": "workspace:*",
+    "@vercel/blob": "^2.8.2",
+    "@vercel/sandbox": "^3.9.1",
+    "busboy": "1.6.0",
     "next": "16.4.3",
+    "pdf-lib": "1.17.1",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "sharp": "^0.35.5",
+    "workflow": "^5.2.3"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.13",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
+    "@types/busboy": "1.5.4",
     "@types/node": "26.4.1",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.5",

@@ -1,0 +1,398 @@
+/* Prototype locale catalog. Columns: source (zh-CN), zh-Hant, en, ja, ko.
+ * UI strings are translated explicitly; user input is never translated. */
+const AudenI18n = (() => {
+  const locales = ['zh-CN', 'zh-Hant', 'en', 'ja', 'ko'];
+  const rows = `
+时间戳转换|時間戳轉換|Timestamp converter|タイムスタンプ変換|타임스탬프 변환
+在时间戳与日期之间，轻松转换。|輕鬆轉換時間戳與日期。|Convert between timestamps and dates.|タイムスタンプと日時を簡単に変換。|타임스탬프와 날짜를 간편하게 변환하세요.
+世界时间|世界時間|World clock|世界時計|세계 시간
+连接每个时区，找到合适的时间。|連接每個時區，找到合適的時間。|Find the right time across time zones.|時差を確認して、ちょうどよい時間を。|시차를 확인하고 알맞은 시간을 찾으세요.
+日期计算|日期計算|Date calculator|日付計算|날짜 계산
+计算日期间隔，安排每一个日程。|計算日期間隔，安排每一個行程。|Count the days and plan ahead.|日数を数えて、予定を立てよう。|날짜 간격을 계산하고 일정을 계획하세요.
+汇率换算|匯率換算|Currency converter|通貨換算|환율 계산
+一个金额，多种货币，一目了然。|一個金額，多種貨幣，一目瞭然。|One amount, many currencies at a glance.|ひとつの金額を、さまざまな通貨で。|하나의 금액을 여러 통화로 한눈에 확인하세요.
+单位换算|單位換算|Unit converter|単位換算|단위 변환
+长度、重量、温度，换个单位就好。|長度、重量、溫度，換個單位就好。|Convert length, weight and temperature.|長さ・重さ・温度を簡単に換算。|길이, 무게, 온도를 간편하게 변환하세요.
+文本工具|文字工具|Text tools|テキストツール|텍스트 도구
+统计、去重、整理，让文字更清爽。|統計、去重、整理，讓文字更清爽。|Count, deduplicate and tidy up text.|集計・重複削除・整形をまとめて。|글자 수 확인, 중복 제거, 정리를 한곳에서.
+JSON 工具|JSON 工具|JSON tools|JSON ツール|JSON 도구
+格式化、校验，让数据清晰可读。|格式化、驗證，讓資料清晰可讀。|Format and validate readable data.|整形と検証で、データを読みやすく。|서식 정리와 검증으로 데이터를 읽기 쉽게.
+协调世界时|協調世界時|Coordinated Universal Time|協定世界時|협정 세계시
+全球标准|全球標準|Global standard|世界標準|세계 표준
+全部|全部|All|すべて|전체
+已复制到剪贴板|已複製到剪貼簿|Copied to clipboard|クリップボードにコピーしました|클립보드에 복사했습니다
+当前预览环境不支持复制，请选中文字复制|目前預覽環境不支援複製，請選取文字複製|Select the text to copy it in this preview.|このプレビューでは、文字を選択してコピーしてください。|이 미리보기에서는 텍스트를 선택해 복사해 주세요.
+取消收藏：{name}|取消收藏：{name}|Remove {name} from favorites|{name}をお気に入りから削除|{name} 즐겨찾기 해제
+收藏：{name}|收藏：{name}|Add {name} to favorites|{name}をお気に入りに追加|{name} 즐겨찾기 추가
+打开{name}|開啟{name}|Open {name}|{name}を開く|{name} 열기
+还没有最近使用的工具|還沒有最近使用的工具|No recent tools yet|最近使ったツールはありません|최근 사용한 도구가 없습니다
+收藏你的常用工具|收藏常用的工具|Save your favorite tools|よく使うツールを登録|자주 쓰는 도구를 저장하세요
+没有找到相关工具|找不到相關工具|No tools found|ツールが見つかりません|도구를 찾을 수 없습니다
+打开一个工具，就会出现在这里。|開啟一個工具，就會出現在這裡。|Open a tool and it will appear here.|ツールを開くと、ここに表示されます。|도구를 열면 여기에 표시됩니다.
+点击工具卡片上的星标，或试试其他关键词。|點選工具卡片的星號，或試試其他關鍵字。|Star a tool or try another search.|星マークを押すか、別のキーワードをお試しください。|별표를 누르거나 다른 검색어를 입력해 보세요.
+我的收藏|我的收藏|Favorites|お気に入り|즐겨찾기
+最近使用|最近使用|Recent|最近使ったツール|최근 사용
+时间与日期|時間與日期|Time & date|日時|시간과 날짜
+换算与计算|換算與計算|Conversion|換算・計算|변환과 계산
+文本与开发|文字與開發|Text & code|テキスト・開発|텍스트와 개발
+全部工具|全部工具|All tools|すべてのツール|모든 도구
+让日常，简单一点。|讓日常，簡單一點。|Make everyday simpler.|毎日を、少しシンプルに。|일상을 조금 더 간편하게.
+好用的小工具，帮你省下每一个不必浪费的瞬间。|好用的小工具，幫你省下每個不必浪費的瞬間。|Handy tools that give you a little time back.|便利なツールで、日々の時間にゆとりを。|편리한 도구로 소중한 시간을 아끼세요.
+搜索工具|搜尋工具|Search tools|ツールを検索|도구 검색
+想做点什么？搜索工具，例如：时间、汇率、JSON|想做點什麼？搜尋工具，例如：時間、匯率、JSON|Search tools: time, currency, JSON…|ツールを検索：時間、通貨、JSON…|도구 검색: 시간, 환율, JSON…
+常用工具|常用工具|Everyday essentials|よく使うツール|자주 쓰는 도구
+为日常，随手备好|為日常，隨手備好|Ready when you are|いつでも、すぐに|필요할 때 바로
+打开世界时间|開啟世界時間|Open world clock|世界時計を開く|세계 시간 열기
+此刻，世界与你同步|此刻，世界與你同步|Your moment, around the world|世界の今を、ひと目で|지금, 세계의 시간을 한눈에
+查看全部|查看全部|View all|すべて見る|전체 보기
+打开汇率换算|開啟匯率換算|Open currency converter|通貨換算を開く|환율 계산 열기
+示例汇率|示例匯率|Sample rates|サンプルレート|예시 환율
+开始换算|開始換算|Convert now|換算する|환산하기
+打开时间戳转换|開啟時間戳轉換|Open timestamp converter|タイムスタンプ変換を開く|타임스탬프 변환 열기
+当前 Unix 时间戳 · 秒|目前 Unix 時間戳 · 秒|Current Unix timestamp · seconds|現在の Unix タイムスタンプ・秒|현재 Unix 타임스탬프 · 초
+转换时间|轉換時間|Convert time|日時を変換|시간 변환
+工具分类|工具分類|Categories|カテゴリー|도구 분류
+时间日期|時間日期|Time & date|日時|시간·날짜
+换算计算|換算計算|Conversion|換算・計算|변환·계산
+文本开发|文字開發|Text & code|テキスト・開発|텍스트·개발
+即开即用，让每一次操作都简单一点。|即開即用，讓每次操作都簡單一點。|Open a tool. Get things done.|開いてすぐ使える、日々の小さな道具。|바로 열고, 간편하게 해결하세요.
+已收藏|已收藏|Saved|登録済み|저장됨
+收藏工具|收藏工具|Save tool|お気に入りに追加|즐겨찾기 추가
+参考城市|參考城市|Reference|基準都市|기준 도시
+夜间时光|夜間時光|Nighttime|夜間|밤
+日间时光|日間時光|Daytime|日中|낮
+上海时间|上海時間|Shanghai time|上海時間|상하이 시간
+此刻的世界，一眼尽收。找到适合彼此的时间。|此刻的世界，一眼盡收。找到適合彼此的時間。|The world at a glance. Find a time that works for everyone.|世界の今を見渡して、みんなに合う時間を。|세계 시간을 한눈에 보고 모두에게 맞는 시간을 찾으세요.
+管理城市|管理城市|Manage cities|都市を選択|도시 관리
+个常用城市|個常用城市|cities available|都市に対応|개 도시 지원
+已关注 {count} 个|已關注 {count} 個|{count} selected|{count} 都市を選択中|{count}개 선택됨
+24 小时制|24 小時制|24-hour|24時間表示|24시간제
+12 小时制|12 小時制|12-hour|12時間表示|12시간제
+当前时间 · 自动更新|目前時間 · 自動更新|Live · updates automatically|現在時刻・自動更新|현재 시간 · 자동 갱신
+显示全部 24 城市|顯示全部 24 城市|Show all 24 cities|全24都市を表示|24개 도시 모두 표시
+恢复常用|恢復常用|Reset selection|初期設定に戻す|기본 선택 복원
+找个好时间|找個好時間|Find a good time|ちょうどよい時間を探す|좋은 시간 찾기
+跨时区会议，一起安排|跨時區會議，一起安排|Plan across time zones|時差を考慮して予定を調整|시차를 고려한 회의 계획
+计划日期|計畫日期|Meeting date|予定日|예정 날짜
+复制时间|複製時間|Copy times|時刻をコピー|시간 복사
+工作时间 09–18|工作時間 09–18|Work hours 09–18|勤務時間 09–18|업무 시간 09–18
+休息时间|休息時間|Off hours|時間外|휴식 시간
+选中时间|選取時間|Selected time|選択した時刻|선택한 시간
+日期与时差按所选时区计算，已考虑夏令时。|日期與時差依所選時區計算，已考慮夏令時間。|Dates and offsets follow each time zone, including daylight saving time.|日付と時差は各タイムゾーンに従い、夏時間も考慮します。|날짜와 시차는 각 시간대를 따르며 서머타임도 반영합니다.
+已选 {count} 种 · 共 {total} 种可选|已選 {count} 種 · 共 {total} 種可選|{count} selected · {total} available|{total} 通貨中 {count} 通貨を選択|{total}개 중 {count}개 선택
+复制{name}金额|複製{name}金額|Copy amount in {name}|{name}の金額をコピー|{name} 금액 복사
+移除{name}|移除{name}|Remove {name}|{name}を削除|{name} 제거
+选择要对照的货币|選擇要對照的貨幣|Choose currencies to compare|比較する通貨を選択|비교할 통화 선택
+点击“管理货币”，添加你常用的币种。|點選「管理貨幣」，新增常用幣別。|Use Manage currencies to add your everyday currencies.|「通貨を選択」から、よく使う通貨を追加できます。|통화 관리에서 자주 쓰는 통화를 추가하세요.
+请输入不小于 0 的有效金额。|請輸入不小於 0 的有效金額。|Enter a valid amount of 0 or more.|0以上の有効な金額を入力してください。|0 이상의 유효한 금액을 입력하세요.
+24 种常见货币，带上熟悉的旗帜。一个金额，一次看清。|24 種常見貨幣，搭配熟悉的旗幟。一個金額，一次看清。|24 familiar currencies, with flags. Compare one amount at a glance.|国・地域の旗で見つかる24通貨。ひとつの金額をまとめて比較。|국기와 함께 보는 24개 통화. 하나의 금액을 한눈에 비교하세요.
+管理货币|管理貨幣|Manage currencies|通貨を選択|통화 관리
+选择基础货币，目前为{name}|選擇基準貨幣，目前為{name}|Choose base currency, currently {name}|基準通貨を選択、現在は{name}|기준 통화 선택, 현재 {name}
+显示全部 {count} 种|顯示全部 {count} 種|Show all {count}|全{count}通貨を表示|{count}개 모두 표시
+多币种换算|多幣別換算|Multi-currency conversion|複数通貨の換算|여러 통화로 환산
+设计预览 · 示例汇率|設計預覽 · 示例匯率|Preview · sample rates|プレビュー・サンプルレート|미리보기 · 예시 환율
+输入金额|輸入金額|Enter amount|金額を入力|금액 입력
+需要换算的金额|需要換算的金額|Amount to convert|換算する金額|환산할 금액
+换算结果|換算結果|Conversion results|換算結果|환산 결과
+管理货币 · 搜索 24 种常用币种|管理貨幣 · 搜尋 24 種常用幣別|Manage currencies · search 24 currencies|通貨を選択・24通貨から検索|통화 관리 · 24개 통화 검색
+当前为界面示例数据，正式版将显示汇率来源及更新时间。|目前為介面示例資料，正式版將顯示匯率來源及更新時間。|Preview data. The full version will show the rate source and update time.|画面確認用のデータです。正式版ではレートの出典と更新時刻を表示します。|미리보기용 데이터입니다. 정식 버전에는 출처와 갱신 시간을 표시합니다.
+示例趋势|示例趨勢|Sample trend|サンプル推移|예시 추이
+1 人民币可兑换|1 人民幣可兌換|1 CNY buys|1 CNY あたり|1 CNY 기준
+示例汇率趋势图|示例匯率趨勢圖|Sample exchange-rate chart|為替レートのサンプルグラフ|예시 환율 차트
+过去 30 天 · 示意|過去 30 天 · 示意|Last 30 days · sample|過去30日・サンプル|최근 30일 · 예시
+30 天最高|30 天最高|30-day high|30日間の最高値|30일 최고
+30 天最低|30 天最低|30-day low|30日間の最安値|30일 최저
+数据类型|資料類型|Data type|データの種類|데이터 유형
+界面演示数据|介面示範資料|Demo data|デモデータ|데모 데이터
+换算小提示|換算小提示|Conversion tip|換算のヒント|환산 안내
+参考汇率帮助你快速估算金额。实际支付或兑换金额，还会受到银行报价与手续费的影响。|參考匯率可協助快速估算金額。實際支付或兌換金額，仍受銀行報價與手續費影響。|Reference rates help estimate costs. Bank rates and fees affect the final amount.|参考レートは概算用です。実際の金額は銀行のレートや手数料によって変わります。|참고 환율은 예상 금액을 계산하는 데 쓰입니다. 실제 금액은 은행 환율과 수수료에 따라 달라집니다.
+24 个城市时区 + UTC。时间戳与当地时间，双向转换。|24 個城市時區 + UTC。時間戳與當地時間，雙向轉換。|24 city time zones plus UTC. Convert timestamps and local times both ways.|24都市のタイムゾーンとUTC。タイムスタンプと現地時刻を相互変換。|24개 도시 시간대와 UTC. 타임스탬프와 현지 시간을 양방향으로 변환하세요.
+输入时间戳|輸入時間戳|Enter timestamp|タイムスタンプを入力|타임스탬프 입력
+输入当地日期时间|輸入當地日期時間|Enter local date and time|現地の日時を入力|현지 날짜와 시간 입력
+时间戳单位|時間戳單位|Timestamp unit|タイムスタンプの単位|타임스탬프 단위
+秒（s）|秒（s）|Seconds (s)|秒（s）|초 (s)
+毫秒（ms）|毫秒（ms）|Milliseconds (ms)|ミリ秒（ms）|밀리초 (ms)
+结果时区|結果時區|Output time zone|出力タイムゾーン|결과 시간대
+输入时区|輸入時區|Input time zone|入力タイムゾーン|입력 시간대
+当前 Unix 时间戳|目前 Unix 時間戳|Current Unix timestamp|現在の Unix タイムスタンプ|현재 Unix 타임스탬프
+复制当前时间戳|複製目前時間戳|Copy current timestamp|現在のタイムスタンプをコピー|현재 타임스탬프 복사
+Asia/Shanghai · 秒|Asia/Shanghai · 秒|Asia/Shanghai · seconds|Asia/Shanghai・秒|Asia/Shanghai · 초
+时间戳 → 日期时间|時間戳 → 日期時間|Timestamp → Date|タイムスタンプ → 日時|타임스탬프 → 날짜
+日期时间 → 时间戳|日期時間 → 時間戳|Date → Timestamp|日時 → タイムスタンプ|날짜 → 타임스탬프
+25 个时区可选|25 個時區可選|25 time zones|25タイムゾーンに対応|25개 시간대
+这个当地时间出现两次，请选择|這個當地時間出現兩次，請選擇|This local time occurs twice. Choose one.|この現地時刻は2回あります。選択してください。|이 현지 시간은 두 번 발생합니다. 하나를 선택하세요.
+第一次（时钟回拨前）|第一次（時鐘回撥前）|First occurrence (before clocks go back)|1回目（時計を戻す前）|첫 번째 (시계가 뒤로 가기 전)
+第二次（时钟回拨后）|第二次（時鐘回撥後）|Second occurrence (after clocks go back)|2回目（時計を戻した後）|두 번째 (시계가 뒤로 간 후)
+复制转换结果|複製轉換結果|Copy conversion results|変換結果をコピー|변환 결과 복사
+开始转换|開始轉換|Convert|変換する|변환하기
+使用当前时间|使用目前時間|Use current time|現在時刻を使う|현재 시간 사용
+转换结果|轉換結果|Results|変換結果|변환 결과
+关于时间与时区|關於時間與時區|About time zones|時刻とタイムゾーンについて|시간과 시간대 안내
+个常用时区|個常用時區|time zones available|タイムゾーンに対応|개 시간대 지원
+亚洲 · 欧洲 · 美洲 · 大洋洲 · UTC|亞洲 · 歐洲 · 美洲 · 大洋洲 · UTC|Asia · Europe · Americas · Oceania · UTC|アジア・欧州・米州・オセアニア・UTC|아시아 · 유럽 · 아메리카 · 오세아니아 · UTC
+从 1970 年 1 月 1 日 00:00:00 UTC 起，经过的秒数。同一时间戳始终代表同一个瞬间。|自 1970 年 1 月 1 日 00:00:00 UTC 起經過的秒數。同一時間戳始終代表同一瞬間。|Seconds since 1 January 1970, 00:00:00 UTC. A timestamp represents the same instant in every time zone.|1970年1月1日00:00:00 UTCからの経過秒数です。同じ値は、どのタイムゾーンでも同じ瞬間を表します。|1970년 1월 1일 00:00:00 UTC부터 지난 초입니다. 같은 값은 모든 시간대에서 같은 순간을 나타냅니다.
+秒 / 毫秒|秒 / 毫秒|Seconds / milliseconds|秒 / ミリ秒|초 / 밀리초
+秒级时间戳通常为 10 位，毫秒级通常为 13 位。|秒級時間戳通常為 10 位，毫秒級通常為 13 位。|Current timestamps typically use 10 digits for seconds or 13 for milliseconds.|現在のタイムスタンプは、秒なら通常10桁、ミリ秒なら13桁です。|현재 타임스탬프는 보통 초 단위 10자리, 밀리초 단위 13자리입니다.
+1 秒 = 1,000 毫秒|1 秒 = 1,000 毫秒|1 second = 1,000 milliseconds|1秒 = 1,000ミリ秒|1초 = 1,000밀리초
+自动处理夏令时|自動處理夏令時間|Daylight saving aware|夏時間に対応|서머타임 자동 반영
+按照所选日期的时区规则转换。回拨造成的重复时间可选择前后两次，跳时造成的不存在时间会提示调整。|依所選日期的時區規則轉換。回撥造成的重複時間可選前後兩次，跳時造成的不存在時間會提示調整。|Uses the rules for the selected date. Repeated times offer two choices; skipped times ask you to adjust the input.|選択した日付のルールを適用します。重複する時刻は前後を選択でき、存在しない時刻は修正を案内します。|선택한 날짜의 규칙을 적용합니다. 중복 시간은 두 경우 중 선택하며, 존재하지 않는 시간은 수정을 안내합니다.
+输入内容仅在当前浏览器中处理。|輸入內容僅在目前瀏覽器中處理。|Your input is processed only in this browser.|入力内容はこのブラウザー内でのみ処理します。|입력 내용은 현재 브라우저에서만 처리됩니다.
+请输入有效的整数时间戳。|請輸入有效的整數時間戳。|Enter a valid integer timestamp.|有効な整数のタイムスタンプを入力してください。|유효한 정수 타임스탬프를 입력하세요.
+时间戳超出安全转换范围。|時間戳超出安全轉換範圍。|Timestamp is outside the safe conversion range.|タイムスタンプが安全に変換できる範囲を超えています。|안전하게 변환할 수 있는 범위를 벗어났습니다.
+这个时间超出了有效范围，请检查输入。|這個時間超出有效範圍，請檢查輸入。|This date is out of range. Check your input.|有効な日時の範囲外です。入力を確認してください。|유효한 날짜 범위를 벗어났습니다. 입력을 확인하세요.
+请输入完整的日期和时间。|請輸入完整的日期和時間。|Enter a complete date and time.|日付と時刻をすべて入力してください。|날짜와 시간을 모두 입력하세요.
+日期或时间无效，请检查输入。|日期或時間無效，請檢查輸入。|Invalid date or time. Check your input.|日時が無効です。入力を確認してください。|유효하지 않은 날짜 또는 시간입니다. 입력을 확인하세요.
+该时区在此刻发生时钟跳转，这个当地时间不存在。请调整时间。|此時區在這一刻發生時鐘跳轉，這個當地時間不存在。請調整時間。|The clock moves forward in this time zone, so this local time does not exist. Choose another time.|時計が進むため、この現地時刻は存在しません。別の時刻を選んでください。|시계가 앞으로 이동하므로 이 현지 시간은 존재하지 않습니다. 다른 시간을 선택하세요.
+当地日期时间|當地日期時間|Local date and time|現地の日時|현지 날짜와 시간
+IANA 标识|IANA 識別碼|IANA identifier|IANA 識別子|IANA 식별자
+秒级时间戳|秒級時間戳|Timestamp in seconds|タイムスタンプ（秒）|초 단위 타임스탬프
+毫秒级时间戳|毫秒級時間戳|Timestamp in milliseconds|タイムスタンプ（ミリ秒）|밀리초 단위 타임스탬프
+等待有效输入|等待有效輸入|Waiting for valid input|有効な入力を待っています|유효한 입력을 기다리는 중
+从今天到那一天，每一天都算数。|從今天到那一天，每一天都算數。|From today to someday, every day counts.|今日からその日まで、一日ずつ数えよう。|오늘부터 그날까지, 하루하루를 계산하세요.
+计算日期间隔|計算日期間隔|Days between dates|日付の間隔を計算|날짜 간격 계산
+按自然日计算|依日曆日計算|Calendar days|暦日で計算|달력 날짜 기준
+开始日期|開始日期|Start date|開始日|시작 날짜
+结束日期|結束日期|End date|終了日|종료 날짜
+天|天|days|日|일
+距离新的一天，还有新的可能。|距離新的一天，還有新的可能。|A new day, a new possibility.|新しい一日に、新しい可能性を。|새로운 날, 새로운 가능성.
+计算间隔|計算間隔|Calculate interval|日数を計算|간격 계산
+从今天开始|從今天開始|Start today|今日から数える|오늘부터 계산
+日期加减|日期加減|Add or subtract days|日付の加算・減算|날짜 더하기·빼기
+起始日期|起始日期|Base date|基準日|기준 날짜
+增加或减少天数|增加或減少天數|Days to add or subtract|加算・減算する日数|더하거나 뺄 일수
+输入负数可以向前推算日期。|輸入負數可推算較早的日期。|Use a negative number to go back in time.|過去の日付を求めるには負の数を入力します。|이전 날짜를 계산하려면 음수를 입력하세요.
+计算后的日期|計算後的日期|Resulting date|計算後の日付|계산된 날짜
+结束日期早于开始日期，|結束日期早於開始日期，|End date precedes start date. |終了日が開始日より前です。|종료일이 시작일보다 이릅니다. 
+相差 {weeks} 周 {days} 天 · 不含开始日|相差 {weeks} 週 {days} 天 · 不含開始日|{weeks} weeks + {days} days · start day excluded|{weeks}週間と{days}日・開始日を除く|{weeks}주 {days}일 차이 · 시작일 제외
+熟悉的数值，不同的单位。换算变得简单。|熟悉的數值，不同的單位。換算變得簡單。|Familiar values, different units. Conversion made easy.|おなじみの数値を別の単位へ。換算をもっと簡単に。|익숙한 수치를 다른 단위로 간편하게 변환하세요.
+换算类别|換算類別|Conversion category|換算カテゴリー|변환 분류
+原始单位|原始單位|Source unit|変換元の単位|원래 단위
+长度|長度|Length|長さ|길이
+重量|重量|Weight|重さ|무게
+温度|溫度|Temperature|温度|온도
+输入数值|輸入數值|Enter value|数値を入力|값 입력
+转换为|轉換為|Convert to|変換先|변환할 단위
+常用关系|常用關係|Useful conversions|よく使う換算|자주 쓰는 환산식
+米|公尺|meters|メートル|미터
+千米|公里|kilometers|キロメートル|킬로미터
+厘米|公分|centimeters|センチメートル|센티미터
+英尺|英尺|feet|フィート|피트
+英寸|英吋|inches|インチ|인치
+千克|公斤|kilograms|キログラム|킬로그램
+克|公克|grams|グラム|그램
+磅|磅|pounds|ポンド|파운드
+盎司|盎司|ounces|オンス|온스
+摄氏度|攝氏度|Celsius|摂氏|섭씨
+华氏度|華氏度|Fahrenheit|華氏|화씨
+开尔文|克耳文|Kelvin|ケルビン|켈빈
+1 英寸 = 2.54 厘米|1 英吋 = 2.54 公分|1 inch = 2.54 cm|1インチ = 2.54 cm|1인치 = 2.54 cm
+1 英尺 = 0.3048 米|1 英尺 = 0.3048 公尺|1 foot = 0.3048 m|1フィート = 0.3048 m|1피트 = 0.3048 m
+1 千米 = 1,000 米|1 公里 = 1,000 公尺|1 km = 1,000 m|1 km = 1,000 m|1 km = 1,000 m
+1 磅 = 0.45359237 千克|1 磅 = 0.45359237 公斤|1 pound = 0.45359237 kg|1ポンド = 0.45359237 kg|1파운드 = 0.45359237 kg
+1 千克 = 1,000 克|1 公斤 = 1,000 公克|1 kg = 1,000 g|1 kg = 1,000 g|1 kg = 1,000 g
+华氏度 = 摄氏度 × 1.8 + 32|華氏度 = 攝氏度 × 1.8 + 32|°F = °C × 1.8 + 32|°F = °C × 1.8 + 32|°F = °C × 1.8 + 32
+开尔文 = 摄氏度 + 273.15|克耳文 = 攝氏度 + 273.15|K = °C + 273.15|K = °C + 273.15|K = °C + 273.15
+把文字整理好，让思路更清晰。|把文字整理好，讓思路更清晰。|Tidy your text. Clear your thoughts.|テキストを整えて、考えもすっきり。|텍스트를 정리하고 생각을 명확하게.
+把时间留给更重要的事。|把時間留給更重要的事。|Make time for what matters.|大切なことに、時間を使おう。|더 중요한 일에 시간을 쓰세요.
+文本工作区|文字工作區|Text workspace|テキスト作業スペース|텍스트 작업 공간
+待处理文本|待處理文字|Text to process|処理するテキスト|처리할 텍스트
+在这里粘贴或输入文本…|在此貼上或輸入文字…|Paste or type your text here…|ここにテキストを貼り付けるか入力…|여기에 텍스트를 붙여 넣거나 입력하세요…
+复制文本|複製文字|Copy text|テキストをコピー|텍스트 복사
+按行去重|逐行去重|Remove duplicates|重複行を削除|중복 행 제거
+去除空行|移除空行|Remove empty lines|空行を削除|빈 행 제거
+清理首尾空格|清除首尾空格|Trim whitespace|前後の空白を削除|앞뒤 공백 제거
+按行排序|逐行排序|Sort lines|行を並べ替え|행 정렬
+转为大写|轉為大寫|UPPERCASE|大文字に変換|대문자로 변환
+转为小写|轉為小寫|lowercase|小文字に変換|소문자로 변환
+文本仅在当前浏览器处理。请按需要复制保存处理结果。|文字僅在目前瀏覽器處理。請視需要複製並儲存結果。|Text stays in this browser. Copy the result when you need to save it.|テキストはこのブラウザー内で処理します。保存する場合は結果をコピーしてください。|텍스트는 현재 브라우저에서 처리됩니다. 필요하면 결과를 복사해 저장하세요.
+{characters} 字符 · {lines} 行 · {han} 个汉字|{characters} 字元 · {lines} 行 · {han} 個漢字|{characters} characters · {lines} lines · {han} Han characters|{characters}文字・{lines}行・漢字{han}文字|{characters}자 · {lines}행 · 한자 {han}자
+即时统计|即時統計|Live count|リアルタイム集計|실시간 통계
+让结构一目了然，让数据清晰可读。|讓結構一目瞭然，讓資料清晰可讀。|See the structure. Read the data.|構造が見える、読みやすいデータに。|구조는 한눈에, 데이터는 읽기 쉽게.
+缩进|縮排|Indentation|インデント|들여쓰기
+JSON 编辑器|JSON 編輯器|JSON editor|JSON エディター|JSON 편집기
+2 空格|2 個空格|2 spaces|スペース2つ|공백 2개
+4 空格|4 個空格|4 spaces|スペース4つ|공백 4개
+JSON 内容|JSON 內容|JSON content|JSON の内容|JSON 내용
+复制|複製|Copy|コピー|복사
+有效 JSON|有效 JSON|Valid JSON|有効な JSON|유효한 JSON
+输入内容仅在浏览器处理|輸入內容僅在瀏覽器處理|Processed in your browser|ブラウザー内で処理|브라우저에서만 처리
+格式化|格式化|Format|整形|서식 정리
+压缩|壓縮|Minify|圧縮|압축
+校验|驗證|Validate|検証|검증
+工具首页|工具首頁|Tool home|ツールホーム|도구 홈
+没有找到相关工具，试试其他关键词。|找不到相關工具，請試試其他關鍵字。|No tools found. Try another keyword.|ツールが見つかりません。別のキーワードをお試しください。|도구를 찾을 수 없습니다. 다른 검색어를 입력해 보세요.
+没有找到城市，试试中文名或 IANA 时区。|找不到城市，請試試城市名稱或 IANA 時區。|No cities found. Try a city name or IANA time zone.|都市が見つかりません。都市名かIANAタイムゾーンをお試しください。|도시를 찾을 수 없습니다. 도시 이름이나 IANA 시간대를 입력해 보세요.
+已关注 {count} / {total} 个城市|已關注 {count} / {total} 個城市|{count} / {total} cities selected|{total}都市中{count}都市を選択|{total}개 중 {count}개 도시 선택
+基础货币|基準貨幣|Base currency|基準通貨|기준 통화
+没有找到货币，试试 USD、日元或日本。|找不到貨幣，請試試 USD、日圓或日本。|No currencies found. Try USD, yen or Japan.|通貨が見つかりません。USD、円、日本などをお試しください。|통화를 찾을 수 없습니다. USD, 엔, 일본 등을 입력해 보세요.
+共 {count} 种货币可选|共 {count} 種貨幣可選|{count} currencies available|{count}通貨から選択|{count}개 통화 지원
+已选 {count} 种目标货币|已選 {count} 種目標貨幣|{count} target currencies selected|換算先の{count}通貨を選択|대상 통화 {count}개 선택
+选择基础货币|選擇基準貨幣|Choose base currency|基準通貨を選択|기준 통화 선택
+管理对照货币|管理對照貨幣|Manage target currencies|比較する通貨を選択|비교 통화 관리
+已显示 {count} 种目标货币|已顯示 {count} 種目標貨幣|Showing {count} target currencies|換算先の{count}通貨を表示|대상 통화 {count}개 표시 중
+没有找到时区，试试城市名或 Asia/Tokyo。|找不到時區，請試試城市名稱或 Asia/Tokyo。|No time zones found. Try a city name or Asia/Tokyo.|タイムゾーンが見つかりません。都市名かAsia/Tokyoをお試しください。|시간대를 찾을 수 없습니다. 도시 이름이나 Asia/Tokyo를 입력해 보세요.
+已取消收藏|已取消收藏|Removed from favorites|お気に入りから削除しました|즐겨찾기에서 제거했습니다
+已加入我的收藏|已加入我的收藏|Added to favorites|お気に入りに追加しました|즐겨찾기에 추가했습니다
+文本已处理|文字已處理|Text updated|テキストを処理しました|텍스트를 처리했습니다
+✓ 有效 JSON|✓ 有效 JSON|✓ Valid JSON|✓ 有効な JSON|✓ 유효한 JSON
+JSON 校验通过|JSON 驗證通過|JSON validation passed|JSON の検証に成功しました|JSON 검증을 통과했습니다
+JSON 已处理|JSON 已處理|JSON updated|JSON を処理しました|JSON을 처리했습니다
+格式错误：{message}|格式錯誤：{message}|Syntax error: {message}|構文エラー：{message}|구문 오류: {message}
+UI 设计预览：可切换页面、收藏和搜索。汇率为示例数据。|UI 設計預覽：可切換頁面、收藏與搜尋。匯率為示例資料。|UI preview: explore pages, favorites and search. Rates are sample data.|UIプレビュー：ページ切り替え・お気に入り・検索が使えます。為替レートはサンプルです。|UI 미리보기: 페이지 이동, 즐겨찾기, 검색을 사용할 수 있습니다. 환율은 예시 데이터입니다.
+Auden Tools — 日常工具，触手可及|Auden Tools — 日常工具，觸手可及|Auden Tools — Your everyday toolkit|Auden Tools — 毎日に役立つツール|Auden Tools — 일상에 필요한 도구
+日常工具，触手可及|日常工具，觸手可及|Your everyday toolkit|毎日に役立つツール|일상에 필요한 도구
+工作空间|工作空間|Workspace|ワークスペース|작업 공간
+小工具，大有用处。|小工具，大有用處。|Small tools. Big help.|小さなツール、大きな助け。|작은 도구, 큰 도움.
+快速查找|快速尋找|Quick search|クイック検索|빠른 검색
+UI 预览|UI 預覽|UI preview|UIプレビュー|UI 미리보기
+为每一个日常，省一点时间。|為每一個日常，省一點時間。|A little time saved, every day.|毎日に、少しのゆとりを。|매일 조금씩 시간을 아끼세요.
+快速到达你需要的工具|快速找到需要的工具|Jump to the tool you need|必要なツールへすぐに|필요한 도구로 바로 이동
+↵ 打开 · esc 关闭|↵ 開啟 · esc 關閉|↵ open · esc close|↵ 開く・esc 閉じる|↵ 열기 · esc 닫기
+管理世界时间|管理世界時間|Manage world clocks|世界時計を管理|세계 시간 관리
+24 个常用城市，找到你关心的时区。|24 個常用城市，找到關心的時區。|24 cities. Find the time zones you care about.|24都市から、気になるタイムゾーンを。|24개 도시에서 필요한 시간대를 찾으세요.
+选择全部|選擇全部|Select all|すべて選択|전체 선택
+完成|完成|Done|完了|완료
+选择货币|選擇貨幣|Choose currencies|通貨を選択|통화 선택
+24 种常用货币，覆盖日常兑换与旅行。|24 種常用貨幣，滿足日常兌換與旅行需求。|24 currencies for everyday exchanges and travel.|日常の両替や旅行に役立つ24通貨。|일상 환전과 여행에 필요한 24개 통화.
+选择时区|選擇時區|Choose a time zone|タイムゾーンを選択|시간대 선택
+24 个城市时区 + UTC，支持夏令时。|24 個城市時區 + UTC，支援夏令時間。|24 city time zones plus UTC, with daylight saving support.|24都市のタイムゾーンとUTC。夏時間にも対応。|24개 도시 시간대와 UTC, 서머타임 지원.
+UTC 偏移按当前日期显示，转换使用输入日期的时区规则。|UTC 偏移依目前日期顯示，轉換使用輸入日期的時區規則。|Offsets shown are for today. Conversions use the rules for your input date.|UTCとの差は今日の値です。変換には入力した日付のルールを使います。|표시된 UTC 시차는 오늘 기준입니다. 변환에는 입력 날짜의 규칙을 적용합니다.
+Auden Tools 首页|Auden Tools 首頁|Auden Tools home|Auden Tools ホーム|Auden Tools 홈
+主导航|主導覽|Main navigation|メインナビゲーション|주 탐색
+切换深浅色|切換深淺色|Toggle light and dark mode|ライト・ダークモードを切り替え|밝은 모드·어두운 모드 전환
+打开导航|開啟導覽|Open navigation|ナビゲーションを開く|탐색 메뉴 열기
+预览说明|預覽說明|About this preview|プレビューについて|미리보기 안내
+搜索工具名称或关键词…|搜尋工具名稱或關鍵字…|Search tool names or keywords…|ツール名やキーワードを検索…|도구 이름이나 검색어 입력…
+搜索全部工具|搜尋全部工具|Search all tools|すべてのツールを検索|모든 도구 검색
+关闭|關閉|Close|閉じる|닫기
+搜索城市或时区|搜尋城市或時區|Search cities or time zones|都市やタイムゾーンを検索|도시 또는 시간대 검색
+搜索城市、国家/地区或时区…|搜尋城市、國家／地區或時區…|Search city, country/region or time zone…|都市・国や地域・タイムゾーンを検索…|도시, 국가/지역, 시간대 검색…
+搜索货币|搜尋貨幣|Search currencies|通貨を検索|통화 검색
+搜索货币代码、中文名称或国家/地区…|搜尋貨幣代碼、名稱或國家／地區…|Search currency code, name or country/region…|通貨コード・名称・国や地域を検索…|통화 코드, 이름, 국가/지역 검색…
+搜索转换时区|搜尋轉換時區|Search conversion time zones|変換用のタイムゾーンを検索|변환 시간대 검색
+搜索城市、国家/地区、UTC 或 IANA 时区…|搜尋城市、國家／地區、UTC 或 IANA 時區…|Search city, country/region, UTC or IANA zone…|都市・国や地域・UTC・IANA識別子を検索…|도시, 국가/지역, UTC, IANA 시간대 검색…
+界面语言|介面語言|Interface language|表示言語|화면 언어
+按币种小数位四舍五入，计算过程保留精度。|依幣別小數位四捨五入，計算過程保留精度。|Rounded to each currency’s decimal places, only after calculation.|計算中の精度を保ち、最後に通貨ごとの桁数で四捨五入します。|계산 정밀도를 유지하고 마지막에 통화별 소수 자릿수로 반올림합니다.
+结果最多保留 8 位小数，仅在显示时四舍五入。|結果最多保留 8 位小數，僅在顯示時四捨五入。|Results show up to 8 decimal places, rounded only for display.|結果は小数点以下8桁まで。表示時にのみ四捨五入します。|결과는 소수점 아래 최대 8자리이며 표시할 때만 반올림합니다.
+请输入有效数值（最多 200 位数字）。|請輸入有效數值（最多 200 位數字）。|Enter a valid number (up to 200 digits).|有効な数値を入力してください（最大200桁）。|유효한 수치를 입력하세요 (최대 200자리).
+请输入不小于 0 的有效金额（最多 200 位数字）。|請輸入不小於 0 的有效金額（最多 200 位數字）。|Enter a valid amount of 0 or more (up to 200 digits).|0以上の有効な金額を入力してください（最大200桁）。|0 이상의 유효한 금액을 입력하세요 (최대 200자리).
+人民币|人民幣|Chinese yuan|人民元|중국 위안
+美元|美元|US dollar|米ドル|미국 달러
+欧元|歐元|Euro|ユーロ|유로
+日元|日圓|Japanese yen|日本円|일본 엔
+英镑|英鎊|British pound|英ポンド|영국 파운드
+港币|港幣|Hong Kong dollar|香港ドル|홍콩 달러
+韩元|韓元|South Korean won|韓国ウォン|대한민국 원
+新加坡元|新加坡元|Singapore dollar|シンガポールドル|싱가포르 달러
+澳大利亚元|澳洲元|Australian dollar|豪ドル|호주 달러
+加拿大元|加拿大元|Canadian dollar|カナダドル|캐나다 달러
+瑞士法郎|瑞士法郎|Swiss franc|スイスフラン|스위스 프랑
+新西兰元|紐西蘭元|New Zealand dollar|NZドル|뉴질랜드 달러
+泰铢|泰銖|Thai baht|タイバーツ|태국 바트
+马来西亚林吉特|馬來西亞令吉|Malaysian ringgit|マレーシアリンギット|말레이시아 링깃
+印度尼西亚盾|印尼盾|Indonesian rupiah|インドネシアルピア|인도네시아 루피아
+越南盾|越南盾|Vietnamese dong|ベトナムドン|베트남 동
+印度卢比|印度盧比|Indian rupee|インドルピー|인도 루피
+阿联酋迪拉姆|阿聯酋迪拉姆|UAE dirham|UAEディルハム|아랍에미리트 디르함
+沙特里亚尔|沙烏地里亞爾|Saudi riyal|サウジリヤル|사우디 리얄
+瑞典克朗|瑞典克朗|Swedish krona|スウェーデンクローナ|스웨덴 크로나
+挪威克朗|挪威克朗|Norwegian krone|ノルウェークローネ|노르웨이 크로네
+南非兰特|南非蘭特|South African rand|南アフリカランド|남아프리카공화국 랜드
+巴西雷亚尔|巴西雷亞爾|Brazilian real|ブラジルレアル|브라질 레알
+墨西哥比索|墨西哥披索|Mexican peso|メキシコペソ|멕시코 페소
+中国|中國|China|中国|중국
+美国|美國|United States|米国|미국
+欧元区|歐元區|Euro area|ユーロ圏|유로 지역
+日本|日本|Japan|日本|일본
+英国|英國|United Kingdom|英国|영국
+中国香港|中國香港|Hong Kong, China|中国・香港|중국 홍콩
+中国台湾|中國臺灣|Taiwan, China|中国・台湾|중국 대만
+韩国|韓國|South Korea|韓国|대한민국
+新加坡|新加坡|Singapore|シンガポール|싱가포르
+澳大利亚|澳洲|Australia|オーストラリア|호주
+加拿大|加拿大|Canada|カナダ|캐나다
+瑞士|瑞士|Switzerland|スイス|스위스
+新西兰|紐西蘭|New Zealand|ニュージーランド|뉴질랜드
+泰国|泰國|Thailand|タイ|태국
+马来西亚|馬來西亞|Malaysia|マレーシア|말레이시아
+印度尼西亚|印尼|Indonesia|インドネシア|인도네시아
+越南|越南|Vietnam|ベトナム|베트남
+印度|印度|India|インド|인도
+阿联酋|阿聯酋|United Arab Emirates|アラブ首長国連邦|아랍에미리트
+沙特阿拉伯|沙烏地阿拉伯|Saudi Arabia|サウジアラビア|사우디아라비아
+瑞典|瑞典|Sweden|スウェーデン|스웨덴
+挪威|挪威|Norway|ノルウェー|노르웨이
+南非|南非|South Africa|南アフリカ|남아프리카공화국
+巴西|巴西|Brazil|ブラジル|브라질
+墨西哥|墨西哥|Mexico|メキシコ|멕시코
+法国|法國|France|フランス|프랑스
+德国|德國|Germany|ドイツ|독일
+俄罗斯|俄羅斯|Russia|ロシア|러시아
+上海|上海|Shanghai|上海|상하이
+伦敦|倫敦|London|ロンドン|런던
+纽约|紐約|New York|ニューヨーク|뉴욕
+东京|東京|Tokyo|東京|도쿄
+香港|香港|Hong Kong|香港|홍콩
+台北|臺北|Taipei|台北|타이베이
+首尔|首爾|Seoul|ソウル|서울
+曼谷|曼谷|Bangkok|バンコク|방콕
+吉隆坡|吉隆坡|Kuala Lumpur|クアラルンプール|쿠알라룸푸르
+雅加达|雅加達|Jakarta|ジャカルタ|자카르타
+新德里|新德里|New Delhi|ニューデリー|뉴델리
+迪拜|杜拜|Dubai|ドバイ|두바이
+利雅得|利雅德|Riyadh|リヤド|리야드
+巴黎|巴黎|Paris|パリ|파리
+柏林|柏林|Berlin|ベルリン|베를린
+苏黎世|蘇黎世|Zurich|チューリッヒ|취리히
+莫斯科|莫斯科|Moscow|モスクワ|모스크바
+芝加哥|芝加哥|Chicago|シカゴ|시카고
+洛杉矶|洛杉磯|Los Angeles|ロサンゼルス|로스앤젤레스
+多伦多|多倫多|Toronto|トロント|토론토
+圣保罗|聖保羅|São Paulo|サンパウロ|상파울루
+悉尼|雪梨|Sydney|シドニー|시드니
+奥克兰|奧克蘭|Auckland|オークランド|오클랜드
+亚洲|亞洲|Asia|アジア|아시아
+欧洲|歐洲|Europe|ヨーロッパ|유럽
+美洲|美洲|Americas|南北アメリカ|아메리카
+大洋洲|大洋洲|Oceania|オセアニア|오세아니아
+非洲|非洲|Africa|アフリカ|아프리카
+全球|全球|Global|世界|세계
+`;
+  const messages = Object.fromEntries(rows.trim().split('\n').map(row => {
+    const [source, ...translations] = row.split('|');
+    return [source, [source, ...translations]];
+  }));
+  let locale = 'zh-CN';
+  try {
+    const saved = localStorage.getItem('auden-design-locale');
+    if (locales.includes(saved)) locale = saved;
+  } catch { /* Preferences are optional. */ }
+  function t(key, values = {}) {
+    const message = messages[key]?.[locales.indexOf(locale)] ?? key;
+    return message.replace(/\{(\w+)\}/g, (placeholder, name) => values[name] ?? placeholder);
+  }
+  function setLocale(value) {
+    if (!locales.includes(value)) return;
+    locale = value;
+    try { localStorage.setItem('auden-design-locale', value); } catch { /* Optional. */ }
+  }
+  function apply(root = document) {
+    document.documentElement.lang = locale;
+    root.querySelectorAll('[data-i18n]').forEach(node => { node.textContent = t(node.dataset.i18n); });
+    for (const attribute of ['aria-label', 'placeholder']) {
+      root.querySelectorAll(`[data-i18n-${attribute}]`).forEach(node => {
+        node.setAttribute(attribute, t(node.getAttribute(`data-i18n-${attribute}`)));
+      });
+    }
+  }
+  function localizedItems(items) {
+    return items.map(item => {
+      const result = { ...item };
+      const fields = ['name', 'desc', 'country'].filter(field => item[field]);
+      result.searchTerms = fields.flatMap(field => messages[item[field]] || [item[field]]).join(' ');
+      for (const field of fields) Object.defineProperty(result, field, { enumerable: true, get: () => t(item[field]) });
+      return result;
+    });
+  }
+  return { t, setLocale, apply, localizedItems, locales, messages, get locale() { return locale; } };
+})();
