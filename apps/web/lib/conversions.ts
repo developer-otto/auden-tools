@@ -1,4 +1,4 @@
-// Shared protocol only: this module is safe to import in the browser.
+// Browser conversion limits, validation and worker protocol. No server dependencies.
 export const conversionIds = [
   "image",
   "pdf-merge",
@@ -56,7 +56,7 @@ export const conversionSpecs: Record<
     engine: "built-in",
   },
   "word-pdf": {
-    extensions: ["doc", "docx"],
+    extensions: ["docx"],
     minFiles: 1,
     maxFiles: 1,
     maxFileBytes: 20 * MB,
@@ -67,24 +67,27 @@ export const conversionSpecs: Record<
     extensions: videoExtensions,
     minFiles: 1,
     maxFiles: 1,
-    maxFileBytes: 200 * MB,
-    maxTotalBytes: 200 * MB,
+    maxFileBytes: 100 * MB,
+    maxTotalBytes: 100 * MB,
     engine: "ffmpeg",
   },
   "audio-extract": {
     extensions: videoExtensions,
     minFiles: 1,
     maxFiles: 1,
-    maxFileBytes: 200 * MB,
-    maxTotalBytes: 200 * MB,
+    maxFileBytes: 100 * MB,
+    maxTotalBytes: 100 * MB,
     engine: "ffmpeg",
   },
 };
 export const MAX_PAGES = 500;
-export const MAX_MEDIA_SECONDS = 600;
-export const RETENTION_MS = 60 * 60 * 1000;
+export const MAX_MEDIA_SECONDS = 300;
+export const MAX_OUTPUT_BYTES = 128 * MB;
+export const MAX_IMAGE_PIXELS = 24_000_000;
+export const MAX_WORD_PAGES = 30;
+export const CONVERSION_TIMEOUT_MS = 10 * 60 * 1000;
 export type ConversionOptions = {
-  imageFormat: "png" | "jpeg" | "webp" | "avif";
+  imageFormat: "png" | "jpeg" | "webp";
   quality: number;
   pages: string;
   paper: "a4" | "fit";
@@ -99,36 +102,36 @@ export const defaultConversionOptions: ConversionOptions = {
   videoMode: "compatible",
   audioFormat: "mp3",
 };
-export type JobStatus =
-  "uploading" | "queued" | "running" | "succeeded" | "failed" | "cancelled";
-export type InputFile = { name: string; filename: string; size: number };
-export type OutputFile = {
-  name: string;
-  filename: string;
-  size: number;
-  mime: string;
+export type JobStatus = "running" | "succeeded" | "failed" | "cancelled";
+export type ConversionOutput = { name: string; blob: Blob };
+export type ConversionRequest = {
+  operation: ConversionId;
+  files: File[];
+  options: ConversionOptions;
 };
+export type ConversionProgress = {
+  progress: number | null;
+  phase: "loading" | "converting";
+};
+export type WorkerResponse =
+  | ({ type: "progress" } & ConversionProgress)
+  | ({ type: "result" } & ConversionOutput)
+  | { type: "error"; code: string };
 export type ConversionJob = {
   id: string;
   operation: ConversionId;
   status: JobStatus;
   createdAt: number;
-  expiresAt: number;
   progress: number | null;
+  phase: ConversionProgress["phase"];
   error: string | null;
   inputs: { name: string; size: number }[];
-  output: Omit<OutputFile, "filename"> | null;
-};
-export type Capabilities = {
-  online: boolean;
-  office: boolean;
-  ffmpeg: boolean;
-  upload?: "local" | "blob";
+  output: { name: string; size: number; url: string } | null;
 };
 export const isConversionId = (value: string): value is ConversionId =>
   conversionIds.some((id) => id === value);
 export const isActiveJob = (job: Pick<ConversionJob, "status">) =>
-  ["uploading", "queued", "running"].includes(job.status);
+  job.status === "running";
 
 export class ConversionError extends Error {
   readonly code: string;
@@ -144,7 +147,7 @@ export function validateOptions(value: unknown): ConversionOptions {
     throw new ConversionError("INVALID_OPTIONS");
   const options = { ...defaultConversionOptions, ...value };
   if (
-    !["png", "jpeg", "webp", "avif"].includes(options.imageFormat) ||
+    !["png", "jpeg", "webp"].includes(options.imageFormat) ||
     !Number.isInteger(options.quality) ||
     options.quality < 10 ||
     options.quality > 100 ||
@@ -155,7 +158,7 @@ export function validateOptions(value: unknown): ConversionOptions {
     options.pages.length > 2000
   )
     throw new ConversionError("INVALID_OPTIONS");
-  // Do not persist arbitrary fields supplied by a client.
+  // Only keep supported options.
   return {
     imageFormat: options.imageFormat,
     quality: options.quality,
@@ -209,22 +212,6 @@ export function validateFiles(
     throw new ConversionError("FILE_TOO_LARGE");
 }
 
-export function publicJob(job: ConversionJob): ConversionJob {
-  return {
-    id: job.id,
-    operation: job.operation,
-    status: job.status,
-    createdAt: job.createdAt,
-    expiresAt: job.expiresAt,
-    progress: job.progress,
-    error: job.error,
-    inputs: job.inputs.map(({ name, size }) => ({ name, size })),
-    output: job.output
-      ? { name: job.output.name, size: job.output.size, mime: job.output.mime }
-      : null,
-  };
-}
-
 export const conversionErrors: Record<string, string> = {
   INVALID_OPTIONS: "转换选项无效，请重新设置。",
   INVALID_PAGES: "页码无效，请输入 PDF 中存在的页码，例如 1-3,5。",
@@ -235,19 +222,15 @@ export const conversionErrors: Record<string, string> = {
   INVALID_FILE: "文件无法读取，可能已损坏或格式不匹配。",
   ENCRYPTED_PDF: "暂不支持加密 PDF，请先移除密码。",
   ANIMATED_IMAGE: "暂不支持动态图，请使用静态图片。",
-  WORKER_OFFLINE: "转换服务暂时离线，请稍后重试。",
-  ENGINE_UNAVAILABLE: "当前服务器尚未启用此转换功能。",
-  BUSY: "当前任务较多，请稍后再试。",
+  BROWSER_UNSUPPORTED:
+    "当前浏览器不支持此转换，请使用新版 Chrome、Edge、Firefox 或 Safari。",
+  ENGINE_LOAD: "本地转换引擎加载失败，请检查网络后重试。文件不会上传。",
+  IMAGE_LIMIT: "图片像素过大，请先缩小至 2400 万像素以内。",
+  WORD_LIMIT: "文档内容过大，请缩减至 30 页以内后重试。",
   TIMEOUT: "转换超时，请缩小文件后重试。",
   FAILED: "转换失败，请检查文件后重试。",
   NO_AUDIO: "该文件不包含可提取的音轨。",
   INCOMPATIBLE_CODEC: "该视频无法快速封装，请改用兼容模式。",
-  MEDIA_LIMIT: "视频需在 10 分钟以内，分辨率不超过 4K。",
+  MEDIA_LIMIT: "视频需在 5 分钟以内，分辨率不超过 1080p。",
   OUTPUT_TOO_LARGE: "转换结果过大，请缩小源文件后重试。",
-  INTERRUPTED: "服务重启中断了任务，请重试。",
-  NOT_FOUND: "任务不存在或已过期，请重新上传。",
-  FORBIDDEN: "请求验证失败，请刷新页面后重试。",
-  UPLOAD_FAILED: "上传失败，请检查网络后重试。",
-  UPLOAD_TIMEOUT: "上传超时，请检查网络或缩小文件。",
-  RATE_LIMIT: "任务提交过于频繁，请稍后再试。",
 };

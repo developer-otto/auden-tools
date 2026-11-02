@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ConversionError,
   conversionErrors,
@@ -11,13 +11,12 @@ import {
   type ConversionId,
   type ConversionJob,
   type ConversionOptions,
-  type Capabilities,
+  type ConversionRequest,
 } from "../../lib/conversions";
 import { getTool } from "../../lib/tools";
 import { useApp } from "../providers";
 import { DetailHeader, ErrorMessage, Notice } from "../shared";
 import { Icon } from "../icon";
-import { uploadCloud, uploadLocal } from "../../lib/conversion-upload";
 
 function sizeLabel(bytes: number) {
   return bytes < 1024 * 1024
@@ -25,87 +24,63 @@ function sizeLabel(bytes: number) {
     : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 const statusLabels = {
-  uploading: "正在上传",
-  queued: "排队等待",
   running: "正在转换",
   succeeded: "转换完成",
   failed: "转换失败",
   cancelled: "已取消",
 };
-const formatLabels = { png: "PNG", jpeg: "JPG", webp: "WebP", avif: "AVIF" };
+const formatLabels = { png: "PNG", jpeg: "JPG", webp: "WebP" };
 
 export default function FileTool({ operation }: { operation: ConversionId }) {
+  return <FileWorkspace key={operation} operation={operation} />;
+}
+
+function FileWorkspace({ operation }: { operation: ConversionId }) {
   const { t, locale } = useApp(),
     spec = conversionSpecs[operation];
-  const [files, setFiles] = useState<File[]>([]),
-    [options, setOptions] = useState<ConversionOptions>({
-      ...defaultConversionOptions,
-    });
-  const [error, setError] = useState(""),
-    [uploading, setUploading] = useState<number | null>(null),
-    [dragging, setDragging] = useState(false);
-  const [jobs, setJobs] = useState<ConversionJob[]>([]),
-    [capabilities, setCapabilities] = useState<Capabilities | null>(null),
-    [networkError, setNetworkError] = useState(false);
-  const [deleting, setDeleting] = useState<string[]>([]);
+  const [files, setFiles] = useState<File[]>([]);
+  const [options, setOptions] = useState<ConversionOptions>({
+    ...defaultConversionOptions,
+  });
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const [jobs, setJobs] = useState<ConversionJob[]>([]);
   const picker = useRef<HTMLInputElement>(null),
-    uploadController = useRef<AbortController | null>(null),
     dragDepth = useRef(0);
-  const refresh = useCallback(async (signal?: AbortSignal) => {
-    try {
-      const response = await fetch("/api/conversions", {
-        cache: "no-store",
-        signal,
-      });
-      if (!response.ok) throw new Error("offline");
-      const data: { capabilities: Capabilities; jobs: ConversionJob[] } =
-        await response.json();
-      setCapabilities(data.capabilities);
-      setJobs(data.jobs);
-      setNetworkError(false);
-      return data.jobs.some(isActiveJob);
-    } catch {
-      if (!signal?.aborted) setNetworkError(true);
-      return false;
-    }
-  }, []);
-  const hasPendingJobs = jobs.some(isActiveJob);
-  useEffect(() => {
-    const controller = new AbortController();
-    let timer: ReturnType<typeof setTimeout>;
-    const poll = async () => {
-      const active = await refresh(controller.signal);
-      if (!controller.signal.aborted)
-        timer = setTimeout(poll, active ? 1500 : 8000);
-    };
-    void poll();
-    return () => {
-      controller.abort();
-      clearTimeout(timer);
-    };
-  }, [refresh, hasPendingJobs]);
-  useEffect(() => () => uploadController.current?.abort(), []);
-  const available =
-    capabilities?.online &&
-    (spec.engine === "built-in" || capabilities[spec.engine]);
-  const displayed = jobs.filter(
-    (job) => job.operation === operation && job.status !== "uploading",
+  const active = useRef<{ id: string; controller: AbortController } | null>(
+    null,
   );
+  const resources = useRef(
+    new Map<string, { request: ConversionRequest; url?: string }>(),
+  );
+  const mounted = useRef(false);
+  useEffect(() => {
+    mounted.current = true;
+    const retained = resources.current;
+    return () => {
+      mounted.current = false;
+      active.current?.controller.abort();
+      for (const resource of retained.values())
+        if (resource.url) URL.revokeObjectURL(resource.url);
+      retained.clear();
+    };
+  }, []);
+  const displayed = jobs;
   const addFiles = (selection: FileList | File[] | null) => {
-    if (!selection || uploading !== null) return;
+    if (!selection || busy) return;
     const next =
       spec.maxFiles === 1
         ? Array.from(selection)
         : [...files, ...Array.from(selection)];
     try {
-      // A merge can be assembled one file at a time.
-      if (next.length)
-        validateFiles(
-          operation,
-          next.length < spec.minFiles
-            ? [...next, ...next.slice(0, spec.minFiles - next.length)]
-            : next,
-        );
+      // Let a merge be assembled one file at a time without duplicating its size.
+      if (next.length && next.length < spec.minFiles) {
+        validateFiles(operation, [
+          ...next,
+          { name: "placeholder.pdf", size: 1 },
+        ]);
+      } else if (next.length) validateFiles(operation, next);
       setFiles(next);
       setError("");
     } catch (cause) {
@@ -113,7 +88,7 @@ export default function FileTool({ operation }: { operation: ConversionId }) {
     }
     if (picker.current) picker.current.value = "";
   };
-  const moveFile = (index: number, direction: number) => {
+  const moveFile = (index: number, direction: number) =>
     setFiles((previous) => {
       const next = [...previous];
       [next[index], next[index + direction]] = [
@@ -122,84 +97,104 @@ export default function FileTool({ operation }: { operation: ConversionId }) {
       ];
       return next;
     });
-  };
   const update = <K extends keyof ConversionOptions>(
     key: K,
     value: ConversionOptions[K],
   ) => setOptions((previous) => ({ ...previous, [key]: value }));
-  const submit = async () => {
-    if (uploadController.current) return;
+  const run = async (request: ConversionRequest, id = crypto.randomUUID()) => {
+    if (active.current) return;
+    const controller = new AbortController();
+    active.current = { id, controller };
+    setBusy(true);
+    setError("");
+    const previous = resources.current.get(id);
+    if (previous?.url) URL.revokeObjectURL(previous.url);
+    resources.current.delete(id);
+    resources.current.set(id, { request });
+    // Bound retained files and downloads to the three most recent conversions.
+    while (resources.current.size > 3) {
+      const oldest = resources.current.keys().next().value!;
+      const resource = resources.current.get(oldest)!;
+      if (resource.url) URL.revokeObjectURL(resource.url);
+      resources.current.delete(oldest);
+    }
+    const job: ConversionJob = {
+      id,
+      operation,
+      status: "running",
+      createdAt: Date.now(),
+      progress: null,
+      phase: "loading",
+      error: null,
+      inputs: request.files.map(({ name, size }) => ({ name, size })),
+      output: null,
+    };
+    setJobs((previous) => [
+      job,
+      ...previous.filter(
+        (item) => item.id !== id && resources.current.has(item.id),
+      ),
+    ]);
+    const change = (patch: Partial<ConversionJob>) => {
+      if (mounted.current)
+        setJobs((previous) =>
+          previous.map((item) =>
+            item.id === id ? { ...item, ...patch } : item,
+          ),
+        );
+    };
+    try {
+      const { convertInBrowser } = await import("../../lib/browser/convert");
+      controller.signal.throwIfAborted();
+      const output = await convertInBrowser(request, controller.signal, change);
+      controller.signal.throwIfAborted();
+      if (!mounted.current) return;
+      const url = URL.createObjectURL(output.blob);
+      resources.current.set(id, { request, url });
+      change({
+        status: "succeeded",
+        progress: 100,
+        output: { name: output.name, size: output.blob.size, url },
+      });
+    } catch (cause) {
+      change(
+        controller.signal.aborted
+          ? { status: "cancelled", progress: null }
+          : {
+              status: "failed",
+              error: cause instanceof ConversionError ? cause.code : "FAILED",
+              progress: null,
+            },
+      );
+    } finally {
+      if (active.current?.id === id) active.current = null;
+      if (mounted.current) setBusy(false);
+    }
+  };
+  const submit = () => {
     try {
       validateFiles(operation, files);
       if (operation === "pdf-split") parsePages(options.pages, 500);
+      void run({ operation, files: [...files], options: { ...options } });
     } catch (cause) {
       setError(
         cause instanceof ConversionError ? cause.code : "INVALID_OPTIONS",
       );
+    }
+  };
+  const deleteJob = (job: ConversionJob) => {
+    if (active.current?.id === job.id) {
+      active.current.controller.abort();
       return;
     }
-    setError("");
-    setUploading(0);
-    const controller = new AbortController();
-    uploadController.current = controller;
-    try {
-      const upload =
-        capabilities?.upload === "blob" ? uploadCloud : uploadLocal;
-      const job = await upload({
-        operation,
-        options,
-        files,
-        signal: controller.signal,
-        onProgress: setUploading,
-      });
-      setJobs((previous) => [
-        job,
-        ...previous.filter((item) => item.id !== job.id),
-      ]);
-      void refresh();
-    } catch (cause) {
-      if (!controller.signal.aborted)
-        setError(
-          cause instanceof ConversionError ? cause.code : "UPLOAD_FAILED",
-        );
-    } finally {
-      setUploading(null);
-      uploadController.current = null;
-    }
+    const resource = resources.current.get(job.id);
+    if (resource?.url) URL.revokeObjectURL(resource.url);
+    resources.current.delete(job.id);
+    setJobs((previous) => previous.filter((item) => item.id !== job.id));
   };
-  const deleteJob = async (job: ConversionJob) => {
-    setDeleting((previous) => [...previous, job.id]);
-    try {
-      const response = await fetch(`/api/conversions/${job.id}`, {
-        method: "DELETE",
-      });
-      if (!response.ok && response.status !== 404) throw new Error("delete");
-      setJobs((previous) => previous.filter((item) => item.id !== job.id));
-    } catch {
-      setError("UPLOAD_FAILED");
-    } finally {
-      setDeleting((previous) => previous.filter((id) => id !== job.id));
-    }
-  };
-  const retryJob = async (job: ConversionJob) => {
-    setDeleting((previous) => [...previous, job.id]);
-    try {
-      const response = await fetch(`/api/conversions/${job.id}`, {
-        method: "POST",
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        setError(data.error || "FAILED");
-        return;
-      }
-      setJobs((previous) => [data.job, ...previous]);
-      setError("");
-      void refresh();
-    } catch {
-      setError("UPLOAD_FAILED");
-    } finally {
-      setDeleting((previous) => previous.filter((id) => id !== job.id));
-    }
+  const retryJob = (job: ConversionJob) => {
+    const resource = resources.current.get(job.id);
+    if (resource) void run(resource.request, job.id);
   };
   const totalSize = files.reduce((sum, file) => sum + file.size, 0);
   return (
@@ -209,20 +204,9 @@ export default function FileTool({ operation }: { operation: ConversionId }) {
         <section className="panel file-main">
           <div className="panel-heading">
             <h2>{t("选择文件")}</h2>
-            <span
-              className={`conversion-service ${available && !networkError ? "ready" : ""}`}
-              role="status"
-            >
+            <span className="conversion-service ready" role="status">
               <i />
-              {t(
-                networkError
-                  ? "连接暂时中断"
-                  : !capabilities
-                    ? "正在连接服务"
-                    : available
-                      ? "转换服务就绪"
-                      : "转换服务未就绪",
-              )}
+              {t("浏览器本地处理")}
             </span>
           </div>
           <div
@@ -230,7 +214,7 @@ export default function FileTool({ operation }: { operation: ConversionId }) {
             onDragEnter={(event) => {
               event.preventDefault();
               dragDepth.current++;
-              if (uploading === null) setDragging(true);
+              if (!busy) setDragging(true);
             }}
             onDragOver={(event) => event.preventDefault()}
             onDragLeave={(event) => {
@@ -254,7 +238,7 @@ export default function FileTool({ operation }: { operation: ConversionId }) {
             <button
               className="button"
               onClick={() => picker.current?.click()}
-              disabled={uploading !== null}
+              disabled={busy}
             >
               <Icon name="plus" />
               {t(files.length ? "添加或替换文件" : "选择本地文件")}
@@ -306,7 +290,7 @@ export default function FileTool({ operation }: { operation: ConversionId }) {
                           aria-label={t("上移文件：{name}", {
                             name: file.name,
                           })}
-                          disabled={index === 0 || uploading !== null}
+                          disabled={index === 0 || busy}
                           onClick={() => moveFile(index, -1)}
                         >
                           <Icon name="down" />
@@ -316,9 +300,7 @@ export default function FileTool({ operation }: { operation: ConversionId }) {
                           aria-label={t("下移文件：{name}", {
                             name: file.name,
                           })}
-                          disabled={
-                            index === files.length - 1 || uploading !== null
-                          }
+                          disabled={index === files.length - 1 || busy}
                           onClick={() => moveFile(index, 1)}
                         >
                           <Icon name="down" />
@@ -328,7 +310,7 @@ export default function FileTool({ operation }: { operation: ConversionId }) {
                     <button
                       className="icon-btn"
                       aria-label={t("移除文件：{name}", { name: file.name })}
-                      disabled={uploading !== null}
+                      disabled={busy}
                       onClick={() =>
                         setFiles((previous) =>
                           previous.filter((_, i) => i !== index),
@@ -342,53 +324,27 @@ export default function FileTool({ operation }: { operation: ConversionId }) {
               ))}
             </div>
           ) : null}
-          {uploading !== null ? (
-            <div className="upload-progress" role="status">
-              <div>
-                <span>
-                  {t(uploading < 100 ? "正在上传" : "正在创建转换任务")}
-                </span>
-                <span>{uploading}%</span>
-              </div>
-              <progress
-                value={uploading}
-                max={100}
-                aria-label={t("上传进度")}
-              />
-            </div>
-          ) : null}
           {error ? (
             <ErrorMessage>
               {t(conversionErrors[error] || conversionErrors.FAILED!)}
             </ErrorMessage>
           ) : null}
-          {capabilities && !available ? (
-            <p className="conversion-warning">
-              {t(
-                capabilities.online
-                  ? conversionErrors.ENGINE_UNAVAILABLE!
-                  : conversionErrors.WORKER_OFFLINE!,
-              )}
-            </p>
-          ) : null}
           <div className="file-submit">
             <span>
               <Icon name="shield" />
-              {t("完成后保留 1 小时，可随时删除")}
+              {t("文件不上传，仅在本机处理")}
             </span>
-            {uploading !== null ? (
+            {busy ? (
               <button
                 className="button"
-                onClick={() => uploadController.current?.abort()}
+                onClick={() => active.current?.controller.abort()}
               >
-                {t("取消上传")}
+                {t("取消任务")}
               </button>
             ) : (
               <button
                 className="button primary"
-                disabled={
-                  !available || networkError || files.length < spec.minFiles
-                }
+                disabled={files.length < spec.minFiles}
                 onClick={submit}
               >
                 <Icon name="arrows" />
@@ -400,7 +356,7 @@ export default function FileTool({ operation }: { operation: ConversionId }) {
         <aside className="panel file-settings">
           <span className="eyebrow">CONVERSION SETTINGS</span>
           <h2>{t("转换设置")}</h2>
-          <fieldset disabled={uploading !== null} aria-label={t("转换设置")}>
+          <fieldset disabled={busy} aria-label={t("转换设置")}>
             {operation === "image" ? (
               <>
                 <span className="field-label">{t("输出格式")}</span>
@@ -507,10 +463,10 @@ export default function FileTool({ operation }: { operation: ConversionId }) {
             {operation === "word-pdf" ? (
               <div className="file-setting-summary">
                 <Icon name="file" />
-                <h3>DOC / DOCX → PDF</h3>
+                <h3>DOCX → PDF</h3>
                 <p className="file-hint">
                   {t(
-                    "转换使用服务器字体。复杂排版可能有差异，下载后请检查。暂不支持 PDF 转 Word。",
+                    "仅支持 DOCX，按浏览器显示效果导出图片型 PDF，文字不可选中。复杂排版可能变化，最多 30 页。",
                   )}
                 </p>
               </div>
@@ -541,7 +497,7 @@ export default function FileTool({ operation }: { operation: ConversionId }) {
                   {t(
                     options.videoMode === "copy"
                       ? "仅适用于 H.264 视频和 AAC 音频，其他编码请选择兼容模式。"
-                      : "重新编码为常见播放格式，画质可能略有损失。最长 10 分钟、最高 4K。",
+                      : "重新编码为 H.264 + AAC。最长 5 分钟、最高 1080p，速度取决于设备性能。",
                   )}
                 </p>
               </>
@@ -569,7 +525,7 @@ export default function FileTool({ operation }: { operation: ConversionId }) {
                 </select>
                 <p className="file-hint">
                   {t(
-                    "提取第一条音轨。MP3 / M4A 会重新编码；WAV 文件较大。最长 10 分钟。",
+                    "提取第一条音轨。MP3 / M4A 会重新编码；WAV 文件较大。最长 5 分钟、最高 1080p。",
                   )}
                 </p>
               </>
@@ -580,7 +536,7 @@ export default function FileTool({ operation }: { operation: ConversionId }) {
             <h3>{t("关于你的文件")}</h3>
             <p>
               {t(
-                "文件会上传到服务器处理，仅当前浏览器会话可下载。完成后 1 小时自动清理，也可立即删除。",
+                "文件在浏览器内处理，不上传、不保存在云端。刷新、离开此工具或关闭页面会清除记录和结果，请及时下载。",
               )}
             </p>
           </div>
@@ -589,7 +545,7 @@ export default function FileTool({ operation }: { operation: ConversionId }) {
       <section className="panel conversion-history">
         <div className="panel-heading">
           <h2>{t("最近的转换")}</h2>
-          <span className="muted">{t("此浏览器会话")}</span>
+          <span className="muted">{t("当前页面 · 最近 3 次")}</span>
         </div>
         {displayed.length ? (
           <div className="conversion-jobs">
@@ -613,7 +569,11 @@ export default function FileTool({ operation }: { operation: ConversionId }) {
                   </strong>
                   <div className="job-meta">
                     <span>
-                      {t(statusLabels[job.status])}
+                      {t(
+                        job.status === "running" && job.phase === "loading"
+                          ? "正在加载本地引擎"
+                          : statusLabels[job.status],
+                      )}
                       {job.status === "running" && job.progress !== null
                         ? ` · ${job.progress}%`
                         : ""}
@@ -640,22 +600,12 @@ export default function FileTool({ operation }: { operation: ConversionId }) {
                       )}
                     </p>
                   ) : null}
-                  {job.output ? (
-                    <small className="job-expiry">
-                      {t("可下载至 {time}", {
-                        time: new Intl.DateTimeFormat(locale, {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        }).format(job.expiresAt),
-                      })}
-                    </small>
-                  ) : null}
                 </div>
                 <div className="job-actions">
-                  {job.status === "failed" ? (
+                  {["failed", "cancelled"].includes(job.status) ? (
                     <button
                       className="button small"
-                      disabled={!available || deleting.includes(job.id)}
+                      disabled={busy}
                       onClick={() => void retryJob(job)}
                     >
                       {t("重试转换")}
@@ -664,8 +614,8 @@ export default function FileTool({ operation }: { operation: ConversionId }) {
                   {job.output ? (
                     <a
                       className="button small primary"
-                      href={`/api/conversions/${job.id}/download`}
-                      download
+                      href={job.output.url}
+                      download={job.output.name}
                     >
                       <Icon name="down" />
                       {t("下载")}
@@ -673,7 +623,6 @@ export default function FileTool({ operation }: { operation: ConversionId }) {
                   ) : null}
                   <button
                     className="button small"
-                    disabled={deleting.includes(job.id)}
                     onClick={() => void deleteJob(job)}
                   >
                     {t(isActiveJob(job) ? "取消任务" : "删除文件")}
@@ -691,7 +640,7 @@ export default function FileTool({ operation }: { operation: ConversionId }) {
       </section>
       <Notice>
         {t(
-          "请保持浏览器 Cookie 可用，以便刷新后继续查看任务。关闭页面不影响已排队的转换。",
+          "转换时请保持页面打开。首次使用音视频功能需加载约 31 MB 的本地引擎，文件始终留在你的设备上。",
         )}
       </Notice>
     </>

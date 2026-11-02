@@ -7,37 +7,34 @@
     "node": "24.x"
   },
   "scripts": {
-    "dev": "next dev --port 3000",
-    "build": "next build",
+    "dev": "node scripts/prepare-browser-assets.mjs && next dev --port 3000",
+    "build": "node scripts/prepare-browser-assets.mjs && next build",
     "start": "next start",
     "lint": "eslint --max-warnings 0",
     "check-types": "next typegen && tsc --noEmit",
     "test": "node --test tests/*.test.ts",
-    "test:http": "node tests/conversions-http.mjs",
-    "worker": "node --env-file-if-exists=.env.local scripts/conversion-worker.ts",
-    "db:migrate": "node --env-file-if-exists=.env.local scripts/migrate-conversions.ts"
+    "test:browser": "playwright test"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^1.2.0",
+    "@ffmpeg/core": "0.12.10",
+    "@ffmpeg/ffmpeg": "0.12.15",
     "@repo/ui": "workspace:*",
-    "@vercel/blob": "^2.8.2",
-    "@vercel/sandbox": "^3.9.1",
-    "busboy": "1.6.0",
+    "docx-preview": "0.3.7",
+    "html2canvas": "1.4.1",
+    "jszip": "3.10.1",
     "next": "16.4.3",
     "pdf-lib": "1.17.1",
     "react": "19.2.8",
-    "react-dom": "19.2.8",
-    "sharp": "^0.35.5",
-    "workflow": "^5.2.3"
+    "react-dom": "19.2.8"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "^0.5.13",
+    "@playwright/test": "^1.58.2",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
-    "@types/busboy": "1.5.4",
     "@types/node": "26.4.1",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.5",
+    "esbuild": "0.28.2",
     "eslint": "10.9.1",
     "typescript": "7.0.2"
   }

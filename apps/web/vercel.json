@@ -1,6 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "buildCommand": "pnpm --config.verify-deps-before-run=false build",
-  "crons": [{ "path": "/api/conversions/cleanup", "schedule": "0 3 * * *" }]
+  "buildCommand": "pnpm --config.verify-deps-before-run=false build"
 }

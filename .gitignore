@@ -39,3 +39,6 @@ yarn-error.log*
 *.pem
 .data/
 .local-tools/
+apps/web/public/conversion/
+apps/web/test-results/
+apps/web/playwright-report/
