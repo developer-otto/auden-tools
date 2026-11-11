@@ -1,6 +1,6 @@
 # Auden Tools
 
-基于 Next.js App Router 的日常工具平台，提供 14 个工具和简体中文、繁体中文、英语、日语、韩语。计算、文本和文件转换均在浏览器中完成；Next.js 仅提供页面和汇率获取/缓存接口。
+基于 Next.js App Router 的日常工具平台，提供 15 个工具和简体中文、繁体中文、英语、日语、韩语。计算、文本和文件转换均在浏览器中完成；Next.js 仅提供页面和汇率获取/缓存接口。
 
 **无需数据库、云存储、转换服务器、API Key 或环境变量。** 文件不上传，转换结果仅保存在当前页面内存中。
 
@@ -35,22 +35,23 @@ pnpm --filter web --config.verify-deps-before-run=false test:browser
 
 ## 工具
 
-| 路径                   | 功能                                                     |
-| ---------------------- | -------------------------------------------------------- |
-| `/tools/timestamp`     | 秒/毫秒时间戳与本地时间互转，25 个 IANA 时区及夏令时处理 |
-| `/tools/world`         | 世界时间、时区比较                                       |
-| `/tools/date`          | 日期间隔、加减天数                                       |
-| `/tools/currency`      | 24 种货币、国旗、交叉汇率及历史数据，不包含新台币        |
-| `/tools/units`         | 长度、重量、温度等单位换算                               |
-| `/tools/text`          | 计数、去重、排序、大小写等文本处理                       |
-| `/tools/json`          | JSON 格式化、压缩，保留大数和小数精度                    |
-| `/tools/image`         | JPG / PNG / WebP / AVIF 输入，PNG / JPG / WebP 输出      |
-| `/tools/pdf-merge`     | 按文件顺序合并 PDF，最多 20 个文件、500 页               |
-| `/tools/pdf-split`     | 按指定页码提取，去重并保留输入顺序                       |
-| `/tools/images-pdf`    | 每张图片一页，A4 或适应图片尺寸                          |
-| `/tools/word-pdf`      | DOCX 在浏览器渲染后导出图片型 PDF，最多 30 页            |
-| `/tools/video-mp4`     | MOV / MP4 / MKV / WebM / M4V 转 MP4，兼容转码或快速封装  |
-| `/tools/audio-extract` | 提取第一条音轨，输出 MP3 / M4A / WAV                     |
+| 路径                   | 功能                                                                |
+| ---------------------- | ------------------------------------------------------------------- |
+| `/tools/timestamp`     | 秒/毫秒时间戳与本地时间互转，25 个 IANA 时区及夏令时处理            |
+| `/tools/markets`       | 全球指数、重点个股、市场市值榜入口与按需加载的 TradingView 行情组件 |
+| `/tools/world`         | 世界时间、时区比较                                                  |
+| `/tools/date`          | 日期间隔、加减天数                                                  |
+| `/tools/currency`      | 24 种货币、国旗、交叉汇率及历史数据，不包含新台币                   |
+| `/tools/units`         | 长度、重量、温度等单位换算                                          |
+| `/tools/text`          | 计数、去重、排序、大小写等文本处理                                  |
+| `/tools/json`          | JSON 格式化、压缩，保留大数和小数精度                               |
+| `/tools/image`         | JPG / PNG / WebP / AVIF 输入，PNG / JPG / WebP 输出                 |
+| `/tools/pdf-merge`     | 按文件顺序合并 PDF，最多 20 个文件、500 页                          |
+| `/tools/pdf-split`     | 按指定页码提取，去重并保留输入顺序                                  |
+| `/tools/images-pdf`    | 每张图片一页，A4 或适应图片尺寸                                     |
+| `/tools/word-pdf`      | DOCX 在浏览器渲染后导出图片型 PDF，最多 30 页                       |
+| `/tools/video-mp4`     | MOV / MP4 / MKV / WebM / M4V 转 MP4，兼容转码或快速封装             |
+| `/tools/audio-extract` | 提取第一条音轨，输出 MP3 / M4A / WAV                                |
 
 金额和单位计算使用 BigInt 定点/分数运算，汇率保留上游十进制字符串，只在最终显示时舍入。汇率来自 Frankfurter，界面显示数据日期，不伪装为交易级实时价格。
 

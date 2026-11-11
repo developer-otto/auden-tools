@@ -190,11 +190,13 @@ export function AppShell({ children }: { children: ReactNode }) {
               name={
                 key === "time"
                   ? "clock"
-                  : key === "convert"
-                    ? "arrows"
-                    : key === "files"
-                      ? "files"
-                      : "text"
+                  : key === "markets"
+                    ? "chart"
+                    : key === "convert"
+                      ? "arrows"
+                      : key === "files"
+                        ? "files"
+                        : "text"
               }
             />
             {t(name)}

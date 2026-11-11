@@ -1,4 +1,5 @@
 import calendarDictionary from "./calendar-messages.json";
+import marketDictionary from "./market-messages.json";
 import dictionary from "./messages.json";
 import conversionDictionary from "./conversion-messages.json";
 
@@ -15,6 +16,7 @@ export const messages: Record<string, string[]> = {
   ...dictionary,
   ...conversionDictionary,
   ...calendarDictionary,
+  ...marketDictionary,
 };
 export function isLocale(value: string | undefined): value is Locale {
   return locales.some((locale) => locale === value);

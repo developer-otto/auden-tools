@@ -4466,3 +4466,92 @@ html:lang(en) .timeline-city {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.markets-layout,
+.market-index-grid,
+.market-stock-grid {
+  display: grid;
+  gap: 16px;
+}
+.markets-layout {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+}
+.market-index-grid,
+.market-stock-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr));
+}
+.market-directory {
+  margin-top: 16px;
+}
+.markets-layout > *,
+.market-group {
+  min-width: 0;
+}
+.market-group {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+}
+.market-group h3,
+.market-rank-panel h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+.market-rank-panel h3 {
+  margin-top: 22px;
+}
+.market-group ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 8px;
+}
+.market-note {
+  font-size: 12px;
+  line-height: 1.7;
+}
+.market-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 5px;
+  border-radius: 5px;
+  font-size: 12px;
+}
+.market-link:hover {
+  background: var(--brand-soft);
+}
+.market-link code {
+  margin-inline-start: auto;
+  color: var(--secondary);
+  font-size: 10px;
+}
+.market-link svg,
+.market-rank-panel .button svg,
+.market-group .button svg {
+  width: 13px;
+  height: 13px;
+}
+.market-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.market-widget {
+  margin: 14px 0 0;
+}
+.market-widget figcaption {
+  display: flex;
+  justify-content: flex-end;
+}
+.market-widget-frame {
+  display: block;
+  width: 100%;
+  height: 502px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+@media (max-width: 900px) {
+  .markets-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

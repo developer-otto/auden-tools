@@ -232,6 +232,7 @@ export function Home({ filter = "all" }: { filter?: string }) {
               time: "时间日期",
               convert: "换算计算",
               text: "文本开发",
+              markets: "市场行情",
             }).map(([key, name]) => (
               <Link
                 key={key}

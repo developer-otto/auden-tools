@@ -5,13 +5,14 @@ export const toolIds = [
   "world",
   "date",
   "currency",
+  "markets",
   "units",
   "text",
   "json",
   ...conversionIds,
 ] as const;
 export type ToolId = (typeof toolIds)[number];
-export type Category = "time" | "convert" | "text" | "files";
+export type Category = "time" | "convert" | "text" | "files" | "markets";
 export type Tool = {
   id: ToolId;
   name: string;
@@ -23,6 +24,17 @@ export type Tool = {
   keywords: string;
 };
 export const tools: Tool[] = [
+  {
+    id: "markets",
+    name: "全球行情",
+    desc: "查看主要指数、重点股票和加密货币行情。",
+    category: "markets",
+    label: "MARKETS",
+    icon: "chart",
+    color: "mint",
+    keywords:
+      "美股 港股 日股 韩股 纳指 标普 市值 股价 加密货币 crypto stocks NASDAQ Bitcoin",
+  },
   {
     id: "image",
     name: "图片格式转换",
@@ -176,4 +188,5 @@ export const categories = {
   convert: "换算与计算",
   text: "文本与开发",
   files: "文件与媒体",
+  markets: "市场行情",
 } as const;
