@@ -6,6 +6,7 @@ import {
   romanDate,
 } from "../lib/alternate-calendars.ts";
 import { loadHolidays } from "../lib/calendar-holidays.ts";
+import { loadSolarTerms } from "../lib/solar-terms.ts";
 import { zoneChanges, zoneOnDate } from "../lib/calendar-time.ts";
 
 test("New York spring and fall changes include local times, abbreviations and offsets", () => {
@@ -83,4 +84,29 @@ test("holiday results preserve each region's civil date and observed days", asyn
         item.region === "US" && item.date === "2026-07-03" && item.substitute,
     ),
   );
+});
+
+test("solar terms follow China Standard Time and keep January in the requested year", async () => {
+  const terms = await loadSolarTerms(2026);
+  assert.equal(terms.length, 24);
+  assert.equal(new Set(terms.map((term) => term.date)).size, 24);
+  assert.ok(terms.every((term) => term.date.startsWith("2026-")));
+  assert.deepEqual(terms[0], {
+    date: "2026-01-05",
+    name: "小寒",
+    longitude: 285,
+  });
+  assert.deepEqual(
+    terms.find((term) => term.name === "清明"),
+    {
+      date: "2026-04-05",
+      name: "清明",
+      longitude: 15,
+    },
+  );
+  assert.deepEqual(terms.at(-1), {
+    date: "2026-12-22",
+    name: "冬至",
+    longitude: 270,
+  });
 });

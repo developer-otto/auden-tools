@@ -20,6 +20,7 @@ import {
 } from "../../lib/calendar-time";
 import { timeZones } from "../../lib/catalog";
 import { parseDate } from "../../lib/dates";
+import { loadSolarTerms, type SolarTerm } from "../../lib/solar-terms";
 import { useApp } from "../providers";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
@@ -86,11 +87,19 @@ export const CalendarExplorer = memo(function CalendarExplorer({
   const { locale, t } = useApp();
   const id = useId();
   const [selected, setSelected] = useState(() => parseDate(today));
+  const [view, setView] = useState<"month" | "year">("month");
+  const [yearStart, setYearStart] = useState(
+    () => new Date(Date.UTC(parseDate(today).getUTCFullYear(), 0, 1)),
+  );
   const [zone, setZone] = useState("Asia/Shanghai");
   const [regions, setRegions] = useState<HolidayRegion[]>(defaultRegions);
   const [holidays, setHolidays] = useState<{
     key: string;
     items: CalendarHoliday[] | null;
+  }>();
+  const [solarTerms, setSolarTerms] = useState<{
+    key: string;
+    items: SolarTerm[] | null;
   }>();
   const year = selected.getUTCFullYear();
   const month = selected.getUTCMonth();
@@ -100,13 +109,27 @@ export const CalendarExplorer = memo(function CalendarExplorer({
     () => new Date(Date.UTC(year, month, 1)),
     [year, month],
   );
-  const requestKey = `${year}|${locale}|${regions.join(",")}`;
+  const annual = view === "year";
+  const rangeYear = annual ? yearStart.getUTCFullYear() : year;
+  const rangeMonth = annual ? yearStart.getUTCMonth() : month;
+  const rangeEnd = useMemo(
+    () => new Date(Date.UTC(rangeYear, rangeMonth + (annual ? 12 : 1), 0)),
+    [rangeYear, rangeMonth, annual],
+  );
+  const rangeEndYear = rangeEnd.getUTCFullYear();
+  const dataYears = useMemo(
+    () =>
+      rangeYear === rangeEndYear ? [rangeYear] : [rangeYear, rangeEndYear],
+    [rangeYear, rangeEndYear],
+  );
+  const yearsKey = dataYears.join(",");
+  const requestKey = `${yearsKey}|${locale}|${regions.join(",")}`;
   useEffect(() => {
     if (!regions.length) return;
     let canceled = false;
-    loadHolidays(regions, year, locale)
+    Promise.all(dataYears.map((item) => loadHolidays(regions, item, locale)))
       .then((items) => {
-        if (!canceled) setHolidays({ key: requestKey, items });
+        if (!canceled) setHolidays({ key: requestKey, items: items.flat() });
       })
       .catch(() => {
         if (!canceled) setHolidays({ key: requestKey, items: null });
@@ -114,23 +137,58 @@ export const CalendarExplorer = memo(function CalendarExplorer({
     return () => {
       canceled = true;
     };
-  }, [year, locale, regions, requestKey]);
+  }, [dataYears, locale, regions, requestKey]);
+
+  useEffect(() => {
+    let canceled = false;
+    Promise.all(dataYears.map(loadSolarTerms))
+      .then((items) => {
+        if (!canceled) setSolarTerms({ key: yearsKey, items: items.flat() });
+      })
+      .catch(() => {
+        if (!canceled) setSolarTerms({ key: yearsKey, items: null });
+      });
+    return () => {
+      canceled = true;
+    };
+  }, [dataYears, yearsKey]);
 
   const available = holidays?.key === requestKey ? holidays.items : undefined;
   const monthKey = key.slice(0, 7);
+  const availableTerms =
+    solarTerms?.key === yearsKey ? solarTerms.items : undefined;
+  const monthTerms = useMemo(
+    () =>
+      (availableTerms ?? []).filter((term) => term.date.startsWith(monthKey)),
+    [availableTerms, monthKey],
+  );
+  const termsByDate = useMemo(
+    () => new Map((availableTerms ?? []).map((term) => [term.date, term])),
+    [availableTerms],
+  );
+  const dateTerm = termsByDate.get(key);
   const monthHolidays = useMemo(
     () =>
       (available ?? []).filter((holiday) => holiday.date.startsWith(monthKey)),
     [available, monthKey],
   );
-  const holidayDates = useMemo(
-    () => [...new Set(monthHolidays.map((item) => item.date))].map(parseDate),
-    [monthHolidays],
+  const holidayDays = useMemo(
+    () => new Set((available ?? []).map((item) => item.date)),
+    [available],
   );
-  const changes = useMemo(() => zoneChanges(zone, year), [zone, year]);
-  const changeDates = useMemo(
-    () => changes.map((change) => parseDate(change.date)),
-    [changes],
+  const changesByYear = useMemo(
+    () => new Map(dataYears.map((item) => [item, zoneChanges(zone, item)])),
+    [dataYears, zone],
+  );
+  const changes = changesByYear.get(year) ?? [];
+  const changeDays = useMemo(
+    () =>
+      new Set(
+        [...changesByYear.values()].flatMap((items) =>
+          items.map((change) => change.date),
+        ),
+      ),
+    [changesByYear],
   );
   const dateHolidays = monthHolidays.filter((holiday) => holiday.date === key);
   const dateChanges = changes.filter((change) => change.date === key);
@@ -163,25 +221,62 @@ export const CalendarExplorer = memo(function CalendarExplorer({
     );
   };
 
+  const updateYearRange = (nextYear: number, nextMonth: number) => {
+    const startMonth = nextYear === last.getUTCFullYear() ? 0 : nextMonth;
+    const start = new Date(Date.UTC(nextYear, startMonth, 1));
+    const end = new Date(Date.UTC(nextYear, startMonth + 12, 0));
+    setYearStart(start);
+    if (selected < start || selected > end) setSelected(start);
+  };
+  const selectDate = (date: Date) => {
+    if (annual && (date < yearStart || date > rangeEnd)) setView("month");
+    setSelected(date);
+  };
+  const showToday = () => {
+    if (annual && (todayDate < yearStart || todayDate > rangeEnd))
+      setYearStart(new Date(Date.UTC(todayDate.getUTCFullYear(), 0, 1)));
+    setSelected(todayDate);
+  };
+
   return (
     <div className="calendar-explorer">
-      <div className="calendar-overview">
+      <div className="calendar-overview" data-view={view}>
         <Card as="section" className="panel calendar-month">
           <div className="panel-heading">
-            <h2>{t("日历表")}</h2>
-            <Button
-              className="button small"
-              onClick={() => setSelected(todayDate)}
-            >
+            <h2>{t(annual ? "公历年视图" : "日历表")}</h2>
+            <Button className="button small" onClick={showToday}>
               {t("回到今天")}
             </Button>
           </div>
           <div className="calendar-controls">
+            <ToggleGroup
+              type="single"
+              className="calendar-view-switch"
+              aria-label={t("日历视图")}
+              value={view}
+              onValueChange={(value) => {
+                if (value === "year") {
+                  setYearStart(new Date(Date.UTC(year, 0, 1)));
+                  setView("year");
+                } else if (value === "month") setView("month");
+              }}
+            >
+              <ToggleGroupItem className="filter-pill" value="month">
+                {t("月视图")}
+              </ToggleGroupItem>
+              <ToggleGroupItem className="filter-pill" value="year">
+                {t("年视图")}
+              </ToggleGroupItem>
+            </ToggleGroup>
             <Select
               className="field"
               aria-label={t("年份")}
-              value={year}
-              onValueChange={(value) => setMonth(Number(value), month)}
+              value={rangeYear}
+              onValueChange={(value) =>
+                annual
+                  ? updateYearRange(Number(value), rangeMonth)
+                  : setMonth(Number(value), month)
+              }
             >
               {years.map((item) => (
                 <SelectItem key={item} value={item}>
@@ -191,48 +286,82 @@ export const CalendarExplorer = memo(function CalendarExplorer({
             </Select>
             <Select
               className="field"
-              aria-label={t("月份")}
-              value={month}
-              onValueChange={(value) => setMonth(year, Number(value))}
+              aria-label={t(annual ? "起始月份" : "月份")}
+              value={rangeMonth}
+              onValueChange={(value) =>
+                annual
+                  ? updateYearRange(rangeYear, Number(value))
+                  : setMonth(year, Number(value))
+              }
             >
-              {months.map((item, index) => (
-                <SelectItem key={index} value={index}>
-                  {monthNames.format(item)}
-                </SelectItem>
-              ))}
+              {months
+                .slice(
+                  0,
+                  annual && rangeYear === last.getUTCFullYear() ? 1 : 12,
+                )
+                .map((item, index) => (
+                  <SelectItem key={index} value={index}>
+                    {monthNames.format(item)}
+                  </SelectItem>
+                ))}
             </Select>
           </div>
+          {annual ? (
+            <div className="calendar-year-summary">
+              <span>
+                <time dateTime={dateKey(yearStart)}>{dateKey(yearStart)}</time>{" "}
+                – <time dateTime={dateKey(rangeEnd)}>{dateKey(rangeEnd)}</time>
+              </span>
+              <a href={`#${id}-day`}>{t("查看所选日期详情")}</a>
+            </div>
+          ) : null}
           <Calendar
-            className="ui-calendar explorer-calendar"
+            key={annual ? dateKey(yearStart) : view}
+            className={`ui-calendar explorer-calendar${annual ? " calendar-year-grid" : ""}`}
             mode="single"
             required
             selected={selected}
             today={todayDate}
-            month={visibleMonth}
-            onMonthChange={(date) =>
-              setMonth(date.getUTCFullYear(), date.getUTCMonth())
+            month={annual ? yearStart : visibleMonth}
+            numberOfMonths={annual ? 12 : 1}
+            hideNavigation={annual}
+            disableNavigation={annual}
+            onMonthChange={
+              annual
+                ? undefined
+                : (date) => setMonth(date.getUTCFullYear(), date.getUTCMonth())
             }
             onSelect={setSelected}
             locale={calendarLocales[locale]}
             timeZone="UTC"
-            startMonth={first}
-            endMonth={last}
+            startMonth={annual ? yearStart : first}
+            endMonth={annual ? rangeEnd : last}
             showOutsideDays={false}
             fixedWeeks
-            modifiers={{ holiday: holidayDates, zoneChange: changeDates }}
+            modifiers={{
+              holiday: (day) => holidayDays.has(dateKey(day)),
+              zoneChange: (day) => changeDays.has(dateKey(day)),
+              solarTerm: (day) => termsByDate.has(dateKey(day)),
+            }}
             modifiersClassNames={{
               holiday: "calendar-holiday",
               zoneChange: "calendar-zone-change",
+              solarTerm: "calendar-solar-term",
             }}
             labels={{
-              labelDayButton: (day, modifiers, options) =>
-                [
+              labelDayButton: (day, modifiers, options) => {
+                const term = modifiers.solarTerm
+                  ? termsByDate.get(dateKey(day))
+                  : undefined;
+                return [
                   labelDayButton(day, modifiers, options),
                   modifiers.holiday ? t("公共节日") : "",
                   modifiers.zoneChange ? t("时钟切换") : "",
+                  term ? t(term.name) : "",
                 ]
                   .filter(Boolean)
-                  .join(" · "),
+                  .join(" · ");
+              },
             }}
           />
           <div className="calendar-legend">
@@ -244,10 +373,43 @@ export const CalendarExplorer = memo(function CalendarExplorer({
               <i className="calendar-dot zone-dot" />
               {t("时钟切换")}
             </span>
+            <span>
+              <i className="calendar-dot solar-term-dot" />
+              {t("二十四节气")}
+            </span>
+          </div>
+          <div className="calendar-solar-terms">
+            <span className="muted">
+              {t(annual ? "所选月份节气（北京时间）" : "本月节气（北京时间）")}
+            </span>
+            {monthTerms.map((term) => (
+              <Button
+                className="filter-pill"
+                key={term.date}
+                aria-pressed={term.date === key}
+                onClick={() => setSelected(parseDate(term.date))}
+              >
+                <time dateTime={term.date}>{term.date.slice(5)}</time>{" "}
+                {t(term.name)}
+              </Button>
+            ))}
+            {!availableTerms ? (
+              <span className="muted" role="status">
+                {t(
+                  availableTerms === null
+                    ? "节气数据暂时无法加载。"
+                    : "正在计算节气…",
+                )}
+              </span>
+            ) : null}
           </div>
         </Card>
 
-        <Card as="section" className="panel calendar-day-detail">
+        <Card
+          as="section"
+          className="panel calendar-day-detail"
+          id={`${id}-day`}
+        >
           <div className="panel-heading">
             <h2>{t("当日详情")}</h2>
           </div>
@@ -272,6 +434,15 @@ export const CalendarExplorer = memo(function CalendarExplorer({
               <dd lang="la">{romanDate(julian)}</dd>
             </div>
           </dl>
+          {dateTerm ? (
+            <div className="calendar-solar-detail">
+              <Badge className="calendar-tag">{t("二十四节气")}</Badge>
+              <strong>{t(dateTerm.name)}</strong>
+              <span className="muted">
+                {t("太阳黄经 {degrees}°", { degrees: dateTerm.longitude })}
+              </span>
+            </div>
+          ) : null}
           <h3>{t("当日公共节日")}</h3>
           {dateHolidays.length ? (
             <ul className="calendar-holidays">
@@ -426,7 +597,7 @@ export const CalendarExplorer = memo(function CalendarExplorer({
                     <th scope="row">
                       <Button
                         className="calendar-transition-link"
-                        onClick={() => setSelected(parseDate(change.date))}
+                        onClick={() => selectDate(parseDate(change.date))}
                       >
                         <time dateTime={change.date}>{change.date}</time>
                         <span>{t(changeNames[change.kind])}</span>

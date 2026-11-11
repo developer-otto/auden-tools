@@ -27,6 +27,7 @@
     "@radix-ui/react-toggle": "^1.2.1",
     "@radix-ui/react-toggle-group": "^1.2.1",
     "@repo/ui": "workspace:*",
+    "date-chinese": "2.2.0",
     "date-fns": "^4.4.0",
     "date-holidays": "^3.39.1",
     "docx-preview": "0.3.7",

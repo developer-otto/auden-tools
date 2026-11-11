@@ -122,7 +122,7 @@ export const tools: Tool[] = [
     icon: "calendar",
     color: "blue",
     keywords:
-      "日期差 天数 加减 倒计时 月历 农历 节日 夏令时 冬令时 儒略历 calendar holiday DST lunar Julian",
+      "日期差 天数 加减 倒计时 月历 农历 节日 二十四节气 夏令时 冬令时 儒略历 calendar holiday DST lunar Julian solar terms",
   },
   {
     id: "currency",

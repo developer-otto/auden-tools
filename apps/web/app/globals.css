@@ -4252,3 +4252,105 @@ html:lang(en) .timeline-city {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.solar-term-dot {
+  background: var(--mint-ink);
+}
+.explorer-calendar .calendar-solar-term {
+  position: relative;
+}
+.explorer-calendar .calendar-solar-term::after {
+  position: absolute;
+  inset-block-start: 4px;
+  inset-inline-end: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--mint-ink);
+  outline: 1px solid var(--surface);
+  pointer-events: none;
+  content: "";
+}
+.calendar-solar-terms,
+.calendar-solar-detail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 11px;
+}
+.calendar-solar-terms [aria-pressed="true"] {
+  background: var(--brand-soft);
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.calendar-overview[data-view="year"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+.calendar-view-switch,
+.calendar-year-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.calendar-view-switch [data-state="on"] {
+  background: var(--brand-soft);
+  color: var(--brand);
+  border-color: var(--brand);
+}
+.calendar-year-summary {
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-top: 12px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.calendar-year-summary a {
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.calendar-day-detail {
+  scroll-margin-top: 80px;
+}
+.calendar-year-grid {
+  --rdp-day-height: 32px;
+}
+.calendar-year-grid .rdp-months {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.calendar-year-grid .rdp-month {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px;
+  min-width: 0;
+  font-size: 11px;
+}
+.calendar-year-grid .rdp-month_caption {
+  justify-content: center;
+  height: auto;
+  padding-bottom: 4px;
+}
+.calendar-year-grid .rdp-caption_label {
+  font-size: 12px;
+}
+@media (max-width: 1150px) {
+  .calendar-year-grid .rdp-months {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 870px) {
+  .calendar-year-grid .rdp-months {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 480px) {
+  .calendar-year-grid .rdp-months {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
