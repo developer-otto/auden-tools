@@ -5,7 +5,6 @@ test("selects a date and returns keyboard focus to the trigger", async ({
 }) => {
   await page.goto("/tools/date");
   const start = page.locator("#date-start");
-  await start.fill("2024-02-01");
 
   const trigger = page.getByRole("button", { name: "打开日历" }).first();
   await trigger.focus();
@@ -15,6 +14,7 @@ test("selects a date and returns keyboard focus to the trigger", async ({
   await page.keyboard.press("Escape");
   await expect(trigger).toBeFocused();
 
+  await start.fill("2024-02-01");
   await trigger.click();
   await calendar.locator('[data-day="2024-02-29"] button').click();
   await expect(start).toHaveValue("2024-02-29");

@@ -1,3 +1,4 @@
+import calendarDictionary from "./calendar-messages.json";
 import dictionary from "./messages.json";
 import conversionDictionary from "./conversion-messages.json";
 
@@ -13,6 +14,7 @@ export const languageNames: Record<Locale, string> = {
 export const messages: Record<string, string[]> = {
   ...dictionary,
   ...conversionDictionary,
+  ...calendarDictionary,
 };
 export function isLocale(value: string | undefined): value is Locale {
   return locales.some((locale) => locale === value);

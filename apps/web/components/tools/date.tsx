@@ -9,6 +9,7 @@ import { Icon } from "../icon";
 import { DatePicker } from "../ui/date-picker";
 import { useApp, useNow } from "../providers";
 import { DetailHeader } from "../shared";
+import { CalendarExplorer } from "./calendar-explorer";
 
 export default function DateTool() {
   const { t } = useApp(),
@@ -33,7 +34,11 @@ export default function DateTool() {
   }
   return (
     <>
-      <DetailHeader id="date" description="从今天到那一天，每一天都算数。" />
+      <DetailHeader
+        id="date"
+        description="查看节日、不同历法和时钟切换，也能计算日期间隔。"
+      />
+      <CalendarExplorer today={today} />
       <div className="detail-columns">
         <Card as="section">
           <div className="panel-heading">

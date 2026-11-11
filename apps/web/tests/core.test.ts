@@ -178,7 +178,7 @@ test("JSON formatting preserves exact numbers, escapes, duplicate keys and negat
 test("all UI/catalog translations cover five languages with matching placeholders", () => {
   const messages = Object.assign(
     {},
-    ...["messages", "conversion-messages"].map((name) =>
+    ...["messages", "conversion-messages", "calendar-messages"].map((name) =>
       JSON.parse(
         readFileSync(new URL(`../lib/${name}.json`, import.meta.url), "utf8"),
       ),

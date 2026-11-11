@@ -121,7 +121,8 @@ export const tools: Tool[] = [
     label: "TIME & DATE",
     icon: "calendar",
     color: "blue",
-    keywords: "日期差 天数 加减 倒计时",
+    keywords:
+      "日期差 天数 加减 倒计时 月历 农历 节日 夏令时 冬令时 儒略历 calendar holiday DST lunar Julian",
   },
   {
     id: "currency",

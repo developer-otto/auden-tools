@@ -2,15 +2,13 @@
 
 import { Button } from "./button";
 import { Input } from "./input";
-import { enUS, ja, ko, zhCN, zhTW } from "date-fns/locale";
 import { useState } from "react";
 import { parseDate } from "../../lib/dates";
 import { Icon } from "../icon";
 import { useApp } from "../providers";
-import { Calendar } from "./calendar";
+import { Calendar, calendarLocales } from "./calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
 
-const calendarLocales = { "zh-CN": zhCN, "zh-Hant": zhTW, en: enUS, ja, ko };
 const firstMonth = parseDate("0001-01-01");
 const lastMonth = parseDate("9999-12-01");
 const outsideDateRange = [
