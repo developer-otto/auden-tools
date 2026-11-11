@@ -16,8 +16,11 @@ import { isLocale, languageNames, locales, matchesQuery } from "../lib/i18n";
 import { categories, getTool, isToolId, tools } from "../lib/tools";
 import { useFavorites } from "../lib/tool-preferences";
 import { Icon } from "./icon";
+import { QuickActions } from "./quick-actions";
 import { Modal, ToolIcon } from "./shared";
 import { useApp } from "./providers";
+
+const contactEmail = "auden12138@gmail.com";
 
 function SearchDialog({ onClose }: { onClose: () => void }) {
   const { t } = useApp(),
@@ -309,8 +312,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         <main id="main-content">{children}</main>
         <footer className="page-footer">
           <span>© 2026 Auden Tools</span>
-          <a className="footer-contact" href="mailto:auden12138@gmail.com">
-            {t("联系邮箱")}：auden12138@gmail.com
+          <a className="footer-contact" href={`mailto:${contactEmail}`}>
+            {t("联系邮箱")}：{contactEmail}
           </a>
           <span>
             {t("为每一个日常，省一点时间。")}
@@ -318,6 +321,12 @@ export function AppShell({ children }: { children: ReactNode }) {
           </span>
         </footer>
       </div>
+      <QuickActions
+        pathname={path}
+        toolId={current?.id}
+        contactEmail={contactEmail}
+        onSearch={() => setSearchOpen(true)}
+      />
       {searchOpen ? (
         <SearchDialog onClose={() => setSearchOpen(false)} />
       ) : null}
