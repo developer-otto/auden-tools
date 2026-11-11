@@ -825,10 +825,17 @@ main {
   max-width: 1420px;
   margin: 0 auto;
   display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
   align-items: center;
   justify-content: space-between;
   font-size: 9px;
   color: #9aa193;
+}
+.footer-contact {
+  color: var(--secondary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 .footer-dot {
   color: #a4b091;

@@ -70,3 +70,7 @@ pnpm --filter web --config.verify-deps-before-run=false test:browser
 GitHub 仓库已经连接 Vercel。推送 `main` 更新正式站，其他分支/PR 生成预览。Root Directory 使用 `apps/web`，Node.js 使用 `24.x`，允许访问根目录和共享工作区；无需设置数据库或转换环境变量。
 
 完整配置见 [Vercel 部署说明](docs/vercel-deployment.md)。
+
+## 联系方式
+
+[auden12138@gmail.com](mailto:auden12138@gmail.com)

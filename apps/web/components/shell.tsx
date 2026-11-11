@@ -309,6 +309,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         <main id="main-content">{children}</main>
         <footer className="page-footer">
           <span>© 2026 Auden Tools</span>
+          <a className="footer-contact" href="mailto:auden12138@gmail.com">
+            {t("联系邮箱")}：auden12138@gmail.com
+          </a>
           <span>
             {t("为每一个日常，省一点时间。")}
             <span className="footer-dot">✳</span>
