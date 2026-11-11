@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { AppProvider } from "../components/providers";
 import { AppShell } from "../components/shell";
 import { isLocale, translate } from "../lib/i18n";
+import "react-day-picker/style.css";
 import "./globals.css";
 
 const geistSans = localFont({

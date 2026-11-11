@@ -1,6 +1,10 @@
 "use client";
+import { Card } from "./ui/card";
+import { Toggle } from "./ui/toggle";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 import Link from "next/link";
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { type CatalogItem } from "../lib/catalog";
 import { matchesQuery } from "../lib/i18n";
 import { dateParts } from "../lib/time";
@@ -8,6 +12,13 @@ import { getTool, type Tool, type ToolId } from "../lib/tools";
 import { useFavorites, useRecent } from "../lib/tool-preferences";
 import { Icon } from "./icon";
 import { useApp } from "./providers";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "./ui/dialog";
 
 export function Flag({
   item,
@@ -39,22 +50,22 @@ export function StarButton({ id }: { id: ToolId }) {
     { favorites, toggleFavorite } = useFavorites(),
     saved = favorites.includes(id);
   return (
-    <button
+    <Toggle
       className={`star-btn ${saved ? "saved" : ""}`}
-      aria-pressed={saved}
+      pressed={saved}
       aria-label={t(saved ? "取消收藏：{name}" : "收藏：{name}", {
         name: t(getTool(id).name),
       })}
-      onClick={() => toggleFavorite(id)}
+      onPressedChange={() => toggleFavorite(id)}
     >
       <Icon name="star" />
-    </button>
+    </Toggle>
   );
 }
 export function ToolCard({ tool }: { tool: Tool }) {
   const { t } = useApp();
   return (
-    <article className="tool-card">
+    <Card as="article" className="tool-card">
       <Link
         href={`/tools/${tool.id}`}
         className="card-link"
@@ -67,7 +78,7 @@ export function ToolCard({ tool }: { tool: Tool }) {
         <span className="tool-category">{tool.label}</span>
       </div>
       <StarButton id={tool.id} />
-    </article>
+    </Card>
   );
 }
 export function DetailHeader({
@@ -101,15 +112,15 @@ export function DetailHeader({
         <p className="detail-description">{t(description)}</p>
       </div>
       <div className="detail-actions">
-        <button
+        <Toggle
           className="button"
           aria-label={t(saved ? "已收藏" : "收藏工具")}
-          aria-pressed={saved}
-          onClick={() => toggleFavorite(id)}
+          pressed={saved}
+          onPressedChange={() => toggleFavorite(id)}
         >
           <Icon name="star" />
           {t(saved ? "已收藏" : "收藏工具")}
-        </button>
+        </Toggle>
         {children}
       </div>
     </div>
@@ -126,14 +137,14 @@ export function CopyButton({
 }) {
   const { t, copy } = useApp();
   return (
-    <button
+    <Button
       className="icon-btn"
       aria-label={t(label)}
       disabled={disabled}
       onClick={() => copy(value)}
     >
       <Icon name="copy" />
-    </button>
+    </Button>
   );
 }
 export function AnalogClock({
@@ -181,44 +192,56 @@ export function Modal({
   onClose: () => void;
   className?: string;
 }) {
-  const dialog = useRef<HTMLDialogElement>(null),
-    titleId = useId(),
-    { t } = useApp();
-  useEffect(() => {
-    const node = dialog.current!;
-    node.showModal();
-    node.querySelector<HTMLInputElement>('input[type="search"]')?.focus();
-    return () => node.close();
-  }, []);
+  const returnFocus = useRef<HTMLElement | null>(null);
+  const content = useRef<HTMLDivElement>(null);
+  const { t } = useApp();
   return (
-    <dialog
-      ref={dialog}
-      className={className}
-      aria-labelledby={titleId}
-      onCancel={onClose}
-      onClick={(event) => {
-        if (event.target !== event.currentTarget) return;
-        const rect = event.currentTarget.getBoundingClientRect();
-        if (
-          event.clientX < rect.left ||
-          event.clientX > rect.right ||
-          event.clientY < rect.top ||
-          event.clientY > rect.bottom
-        )
-          onClose();
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
       }}
     >
-      <div className="modal-heading">
-        <div>
-          <h2 id={titleId}>{t(title)}</h2>
-          {description ? <p className="muted">{t(description)}</p> : null}
+      <DialogContent
+        ref={content}
+        className={className}
+        {...(!description ? { "aria-describedby": undefined } : {})}
+        onOpenAutoFocus={(event) => {
+          const active = document.activeElement;
+          returnFocus.current = active instanceof HTMLElement ? active : null;
+          const search = content.current?.querySelector<HTMLInputElement>(
+            'input[type="search"]',
+          );
+          if (search) {
+            event.preventDefault();
+            search.focus();
+          }
+        }}
+        onCloseAutoFocus={(event) => {
+          if (returnFocus.current?.isConnected) {
+            event.preventDefault();
+            returnFocus.current.focus();
+          }
+        }}
+      >
+        <div className="modal-heading">
+          <div>
+            <DialogTitle>{t(title)}</DialogTitle>
+            {description ? (
+              <DialogDescription className="muted">
+                {t(description)}
+              </DialogDescription>
+            ) : null}
+          </div>
+          <DialogClose asChild>
+            <Button className="icon-btn" aria-label={t("关闭")}>
+              <Icon name="close" />
+            </Button>
+          </DialogClose>
         </div>
-        <button className="icon-btn" onClick={onClose} aria-label={t("关闭")}>
-          <Icon name="close" />
-        </button>
-      </div>
-      {children}
-    </dialog>
+        {children}
+      </DialogContent>
+    </Dialog>
   );
 }
 type PickerItem = CatalogItem & {
@@ -273,10 +296,9 @@ export function CatalogPicker<T extends PickerItem>({
     <Modal title={title} description={description} onClose={onClose}>
       <div className="catalog-search">
         <Icon name="search" />
-        <input
+        <Input
           type="search"
           name="catalog-search"
-          autoFocus
           aria-label={t("搜索名称、代码或地区")}
           placeholder={t("搜索名称、代码或地区")}
           value={query}
@@ -285,14 +307,14 @@ export function CatalogPicker<T extends PickerItem>({
       </div>
       <div className="catalog-filters">
         {["all", ...regions].map((item) => (
-          <button
+          <Button
             key={item}
             className={`filter-pill ${item === region ? "active" : ""}`}
             aria-pressed={item === region}
             onClick={() => setRegion(item)}
           >
             {t(item === "all" ? "全部" : item)}
-          </button>
+          </Button>
         ))}
       </div>
       <div className="catalog-options">
@@ -301,7 +323,7 @@ export function CatalogPicker<T extends PickerItem>({
             const id = item.code || item.id!,
               active = selected.includes(id);
             return (
-              <button
+              <Button
                 key={id}
                 className={`catalog-option ${active ? "selected" : ""}`}
                 aria-pressed={active}
@@ -324,7 +346,7 @@ export function CatalogPicker<T extends PickerItem>({
                     {active ? <Icon name="check" /> : null}
                   </span>
                 </span>
-              </button>
+              </Button>
             );
           })
         ) : (
@@ -337,13 +359,13 @@ export function CatalogPicker<T extends PickerItem>({
         <span aria-live="polite">{footer}</span>
         <div>
           {onSelectAll ? (
-            <button className="text-btn" onClick={onSelectAll}>
+            <Button className="text-btn" onClick={onSelectAll}>
               {t("选择全部")}
-            </button>
+            </Button>
           ) : null}
-          <button className="button primary small" onClick={onClose}>
+          <Button className="button primary small" onClick={onClose}>
             {t("完成")}
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>

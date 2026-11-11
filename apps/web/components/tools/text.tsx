@@ -1,4 +1,7 @@
 "use client";
+import { Card } from "../ui/card";
+import { Button } from "../ui/button";
+import { Textarea } from "../ui/textarea";
 import { useState } from "react";
 import { Icon } from "../icon";
 import { useApp } from "../providers";
@@ -44,15 +47,15 @@ export default function TextTool() {
   return (
     <>
       <DetailHeader id="text" description="把文字整理好，让思路更清晰。" />
-      <section className="panel">
+      <Card as="section">
         <div className="panel-heading">
           <h2>{t("文本工作区")}</h2>
-          <button className="button small" onClick={() => copy(value)}>
+          <Button className="button small" onClick={() => copy(value)}>
             <Icon name="copy" />
             {t("复制文本")}
-          </button>
+          </Button>
         </div>
-        <textarea
+        <Textarea
           name="text-content"
           className="text-area"
           aria-label={t("待处理文本")}
@@ -72,19 +75,19 @@ export default function TextTool() {
         </div>
         <div className="button-row wrapping">
           {Object.entries(actions).map(([id, name], index) => (
-            <button
+            <Button
               key={id}
               className={`button ${index === 0 ? "primary" : ""}`}
               onClick={() => process(id as keyof typeof actions)}
             >
               {t(name)}
-            </button>
+            </Button>
           ))}
         </div>
         <Notice>
           {t("文本仅在当前浏览器处理。请按需要复制保存处理结果。")}
         </Notice>
-      </section>
+      </Card>
     </>
   );
 }

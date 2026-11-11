@@ -65,7 +65,7 @@ test("image conversion downloads a real JPEG locally and releases removed result
   await page
     .locator('input[type="file"]')
     .setInputFiles({ name: "透明.png", mimeType: "image/png", buffer: png });
-  await page.getByRole("button", { name: "JPG", exact: true }).click();
+  await page.getByRole("radio", { name: "JPG", exact: true }).click();
   const bytes = await convert(page);
   expect([...bytes.subarray(0, 2)]).toEqual([255, 216]);
   const url = await page
@@ -208,7 +208,8 @@ test("MOV converts locally to a playable MP4 and cancellation permits retry", as
 test("audio extraction produces a real WAV locally", async ({ page }) => {
   await page.goto("/tools/audio-extract");
   await page.locator('input[type="file"]').setInputFiles(fixture("tiny.mov"));
-  await page.locator("#audio-format").selectOption("wav");
+  await page.getByRole("combobox", { name: "音频格式" }).click();
+  await page.getByRole("option", { name: "WAV · PCM 16-bit" }).click();
   const result = await convert(page);
   expect(result.subarray(0, 4).toString()).toBe("RIFF");
   expect(result.subarray(8, 12).toString()).toBe("WAVE");
@@ -236,13 +237,11 @@ test("corrupt media is rejected even when the WASM probe returns its default exi
   page,
 }) => {
   await page.goto("/tools/video-mp4");
-  await page
-    .locator('input[type="file"]')
-    .setInputFiles({
-      name: "broken.mov",
-      mimeType: "video/quicktime",
-      buffer: Buffer.from("This is not a video"),
-    });
+  await page.locator('input[type="file"]').setInputFiles({
+    name: "broken.mov",
+    mimeType: "video/quicktime",
+    buffer: Buffer.from("This is not a video"),
+  });
   await page.getByRole("button", { name: "开始转换", exact: true }).click();
   await expect(page.locator(".conversion-job")).toHaveClass(/failed/);
   await expect(page.locator(".conversion-job")).toContainText("文件无法读取");

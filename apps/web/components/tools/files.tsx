@@ -1,4 +1,10 @@
 "use client";
+import { Card } from "../ui/card";
+import { Slider } from "../ui/slider";
+import { ToggleGroup, ToggleGroupItem } from "../ui/toggle";
+import { Select, SelectItem } from "../ui/select";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 import { useEffect, useRef, useState } from "react";
 import {
   ConversionError,
@@ -201,7 +207,7 @@ function FileWorkspace({ operation }: { operation: ConversionId }) {
     <>
       <DetailHeader id={operation} description={getTool(operation).desc} />
       <div className="file-workspace">
-        <section className="panel file-main">
+        <Card as="section" className="panel file-main">
           <div className="panel-heading">
             <h2>{t("选择文件")}</h2>
             <span className="conversion-service ready" role="status">
@@ -235,15 +241,15 @@ function FileWorkspace({ operation }: { operation: ConversionId }) {
             <p>
               {spec.extensions.map((value) => value.toUpperCase()).join(" · ")}
             </p>
-            <button
+            <Button
               className="button"
               onClick={() => picker.current?.click()}
               disabled={busy}
             >
               <Icon name="plus" />
               {t(files.length ? "添加或替换文件" : "选择本地文件")}
-            </button>
-            <input
+            </Button>
+            <Input
               ref={picker}
               type="file"
               name="conversion-files"
@@ -285,7 +291,7 @@ function FileWorkspace({ operation }: { operation: ConversionId }) {
                   <div className="file-row-actions">
                     {spec.maxFiles > 1 ? (
                       <>
-                        <button
+                        <Button
                           className="icon-btn move-up"
                           aria-label={t("上移文件：{name}", {
                             name: file.name,
@@ -294,8 +300,8 @@ function FileWorkspace({ operation }: { operation: ConversionId }) {
                           onClick={() => moveFile(index, -1)}
                         >
                           <Icon name="down" />
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           className="icon-btn"
                           aria-label={t("下移文件：{name}", {
                             name: file.name,
@@ -304,10 +310,10 @@ function FileWorkspace({ operation }: { operation: ConversionId }) {
                           onClick={() => moveFile(index, 1)}
                         >
                           <Icon name="down" />
-                        </button>
+                        </Button>
                       </>
                     ) : null}
-                    <button
+                    <Button
                       className="icon-btn"
                       aria-label={t("移除文件：{name}", { name: file.name })}
                       disabled={busy}
@@ -318,7 +324,7 @@ function FileWorkspace({ operation }: { operation: ConversionId }) {
                       }
                     >
                       <Icon name="close" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -335,72 +341,72 @@ function FileWorkspace({ operation }: { operation: ConversionId }) {
               {t("文件不上传，仅在本机处理")}
             </span>
             {busy ? (
-              <button
+              <Button
                 className="button"
                 onClick={() => active.current?.controller.abort()}
               >
                 {t("取消任务")}
-              </button>
+              </Button>
             ) : (
-              <button
+              <Button
                 className="button primary"
                 disabled={files.length < spec.minFiles}
                 onClick={submit}
               >
                 <Icon name="arrows" />
                 {t("开始转换")}
-              </button>
+              </Button>
             )}
           </div>
-        </section>
-        <aside className="panel file-settings">
+        </Card>
+        <Card as="aside" className="panel file-settings">
           <span className="eyebrow">CONVERSION SETTINGS</span>
           <h2>{t("转换设置")}</h2>
           <fieldset disabled={busy} aria-label={t("转换设置")}>
             {operation === "image" ? (
               <>
                 <span className="field-label">{t("输出格式")}</span>
-                <div
+                <ToggleGroup
+                  type="single"
+                  value={options.imageFormat}
+                  onValueChange={(value) => {
+                    if (value)
+                      update(
+                        "imageFormat",
+                        value as ConversionOptions["imageFormat"],
+                      );
+                  }}
                   className="file-format-options"
                   id="image-format"
-                  role="group"
                   aria-label={t("输出格式")}
                 >
                   {Object.entries(formatLabels).map(([value, label]) => (
-                    <button
+                    <ToggleGroupItem
                       key={value}
                       className={
                         options.imageFormat === value ? "selected" : ""
                       }
-                      aria-pressed={options.imageFormat === value}
-                      onClick={() =>
-                        update(
-                          "imageFormat",
-                          value as ConversionOptions["imageFormat"],
-                        )
-                      }
+                      value={value}
                     >
                       {label}
-                    </button>
+                    </ToggleGroupItem>
                   ))}
-                </div>
+                </ToggleGroup>
                 {options.imageFormat !== "png" ? (
-                  <label className="file-setting">
+                  <div className="file-setting">
                     <span>
                       {t("图片质量")}
                       <b>{options.quality}%</b>
                     </span>
-                    <input
-                      type="range"
+                    <Slider
                       name="image-quality"
-                      min="10"
-                      max="100"
-                      value={options.quality}
-                      onChange={(event) =>
-                        update("quality", Number(event.target.value))
-                      }
+                      aria-label={t("图片质量")}
+                      min={10}
+                      max={100}
+                      value={[options.quality]}
+                      onValueChange={([quality]) => update("quality", quality!)}
                     />
-                  </label>
+                  </div>
                 ) : null}
                 <p className="file-hint">
                   {t(
@@ -414,7 +420,7 @@ function FileWorkspace({ operation }: { operation: ConversionId }) {
                 <label className="field-label" htmlFor="pdf-pages">
                   {t("提取页码")}
                 </label>
-                <input
+                <Input
                   className="field"
                   id="pdf-pages"
                   name="pdf-pages"
@@ -443,18 +449,18 @@ function FileWorkspace({ operation }: { operation: ConversionId }) {
                 <label className="field-label" htmlFor="pdf-paper">
                   {t("页面尺寸")}
                 </label>
-                <select
+                <Select
                   className="field"
                   id="pdf-paper"
                   name="pdf-paper"
                   value={options.paper}
-                  onChange={(event) =>
-                    update("paper", event.target.value as "a4" | "fit")
+                  onValueChange={(value) =>
+                    update("paper", value as "a4" | "fit")
                   }
                 >
-                  <option value="a4">{t("A4 · 自动横竖向")}</option>
-                  <option value="fit">{t("适应图片尺寸")}</option>
-                </select>
+                  <SelectItem value="a4">{t("A4 · 自动横竖向")}</SelectItem>
+                  <SelectItem value="fit">{t("适应图片尺寸")}</SelectItem>
+                </Select>
                 <p className="file-hint">
                   {t("每张图片独占一页，按列表顺序排列。")}
                 </p>
@@ -476,23 +482,22 @@ function FileWorkspace({ operation }: { operation: ConversionId }) {
                 <label className="field-label" htmlFor="video-mode">
                   {t("转换模式")}
                 </label>
-                <select
+                <Select
                   className="field"
                   id="video-mode"
                   name="video-mode"
                   value={options.videoMode}
-                  onChange={(event) =>
-                    update(
-                      "videoMode",
-                      event.target.value as "compatible" | "copy",
-                    )
+                  onValueChange={(value) =>
+                    update("videoMode", value as "compatible" | "copy")
                   }
                 >
-                  <option value="compatible">
+                  <SelectItem value="compatible">
                     {t("兼容模式 · H.264 + AAC")}
-                  </option>
-                  <option value="copy">{t("快速封装 · 保留原始画质")}</option>
-                </select>
+                  </SelectItem>
+                  <SelectItem value="copy">
+                    {t("快速封装 · 保留原始画质")}
+                  </SelectItem>
+                </Select>
                 <p className="file-hint">
                   {t(
                     options.videoMode === "copy"
@@ -507,22 +512,22 @@ function FileWorkspace({ operation }: { operation: ConversionId }) {
                 <label className="field-label" htmlFor="audio-format">
                   {t("音频格式")}
                 </label>
-                <select
+                <Select
                   className="field"
                   id="audio-format"
                   name="audio-format"
                   value={options.audioFormat}
-                  onChange={(event) =>
+                  onValueChange={(value) =>
                     update(
                       "audioFormat",
-                      event.target.value as ConversionOptions["audioFormat"],
+                      value as ConversionOptions["audioFormat"],
                     )
                   }
                 >
-                  <option value="mp3">MP3 · 192 kbps</option>
-                  <option value="m4a">M4A / AAC · 192 kbps</option>
-                  <option value="wav">WAV · PCM 16-bit</option>
-                </select>
+                  <SelectItem value="mp3">MP3 · 192 kbps</SelectItem>
+                  <SelectItem value="m4a">M4A / AAC · 192 kbps</SelectItem>
+                  <SelectItem value="wav">WAV · PCM 16-bit</SelectItem>
+                </Select>
                 <p className="file-hint">
                   {t(
                     "提取第一条音轨。MP3 / M4A 会重新编码；WAV 文件较大。最长 5 分钟、最高 1080p。",
@@ -540,9 +545,9 @@ function FileWorkspace({ operation }: { operation: ConversionId }) {
               )}
             </p>
           </div>
-        </aside>
+        </Card>
       </div>
-      <section className="panel conversion-history">
+      <Card as="section" className="panel conversion-history">
         <div className="panel-heading">
           <h2>{t("最近的转换")}</h2>
           <span className="muted">{t("当前页面 · 最近 3 次")}</span>
@@ -603,13 +608,13 @@ function FileWorkspace({ operation }: { operation: ConversionId }) {
                 </div>
                 <div className="job-actions">
                   {["failed", "cancelled"].includes(job.status) ? (
-                    <button
+                    <Button
                       className="button small"
                       disabled={busy}
                       onClick={() => void retryJob(job)}
                     >
                       {t("重试转换")}
-                    </button>
+                    </Button>
                   ) : null}
                   {job.output ? (
                     <a
@@ -621,12 +626,12 @@ function FileWorkspace({ operation }: { operation: ConversionId }) {
                       {t("下载")}
                     </a>
                   ) : null}
-                  <button
+                  <Button
                     className="button small"
                     onClick={() => void deleteJob(job)}
                   >
                     {t(isActiveJob(job) ? "取消任务" : "删除文件")}
-                  </button>
+                  </Button>
                 </div>
               </article>
             ))}
@@ -637,7 +642,7 @@ function FileWorkspace({ operation }: { operation: ConversionId }) {
             <p>{t("转换完成后，下载文件会出现在这里。")}</p>
           </div>
         )}
-      </section>
+      </Card>
       <Notice>
         {t(
           "转换时请保持页面打开。首次使用音视频功能需加载约 31 MB 的本地引擎，文件始终留在你的设备上。",

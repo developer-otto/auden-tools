@@ -5,13 +5,13 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
   useSyncExternalStore,
   type ReactNode,
 } from "react";
 import { translate, type Locale, type Translate } from "../lib/i18n";
 import { clockSnapshot, subscribeClock } from "../lib/clock";
+import { Toast, ToastProvider, ToastViewport } from "./ui/toast";
 type AppContextValue = {
   locale: Locale;
   setLocale: (locale: Locale) => void;
@@ -49,23 +49,14 @@ export function AppProvider({
 }) {
   const [locale, updateLocale] = useState(initialLocale);
   const [theme, updateTheme] = useState(initialTheme);
-  const [toast, setToast] = useState("");
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [toast, setToast] = useState({ id: 0, message: "" });
   const t = useCallback<Translate>(
     (key, values) => translate(locale, key, values),
     [locale],
   );
-  const notify = useCallback((key: string) => {
-    setToast(key);
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => setToast(""), 2800);
+  const notify = useCallback((message: string) => {
+    setToast(({ id }) => ({ id: id + 1, message }));
   }, []);
-  useEffect(
-    () => () => {
-      if (timer.current) clearTimeout(timer.current);
-    },
-    [],
-  );
   useEffect(() => {
     document.documentElement.lang = locale;
     document.body.classList.toggle("dark", theme === "dark");
@@ -104,14 +95,22 @@ export function AppProvider({
   );
   return (
     <AppContext value={context}>
-      <ClockContext value={initialNow}>{children}</ClockContext>
-      <div
-        className={`toast ${toast ? "visible" : ""}`}
-        role="status"
-        aria-live="polite"
-      >
-        {toast ? t(toast) : ""}
-      </div>
+      <ToastProvider duration={2800} label={t("通知")}>
+        <ClockContext value={initialNow}>{children}</ClockContext>
+        {toast.message ? (
+          <Toast
+            key={toast.id}
+            onClose={() =>
+              setToast((current) =>
+                current.id === toast.id ? { ...current, message: "" } : current,
+              )
+            }
+          >
+            {t(toast.message)}
+          </Toast>
+        ) : null}
+        <ToastViewport className="toast-viewport" label={t("通知")} />
+      </ToastProvider>
     </AppContext>
   );
 }

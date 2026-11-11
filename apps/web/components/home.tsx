@@ -1,4 +1,7 @@
 "use client";
+import { Card } from "./ui/card";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 import Link from "next/link";
 import { useState } from "react";
 import { cities, currencies, currencyDigits } from "../lib/catalog";
@@ -18,7 +21,7 @@ function CurrencyPreview() {
     { data, error, retry } = useRemote<RatesSnapshot>("/api/rates");
   const usd = data?.rates.USD;
   return (
-    <article className="feature-card feature-currency">
+    <Card as="article" className="feature-card feature-currency">
       <div className="feature-top">
         <Icon name="arrows" />
         <h3>{t("汇率换算")}</h3>
@@ -53,9 +56,9 @@ function CurrencyPreview() {
       ))}
       <div className="feature-bottom">
         {error ? (
-          <button className="text-btn" onClick={retry}>
+          <Button className="text-btn" onClick={retry}>
             {t("重试")}
-          </button>
+          </Button>
         ) : (
           <span className="preview-tag">{usd?.date || t("加载汇率…")}</span>
         )}
@@ -64,7 +67,7 @@ function CurrencyPreview() {
           <Icon name="right" />
         </Link>
       </div>
-    </article>
+    </Card>
   );
 }
 export function Home({ filter = "all" }: { filter?: string }) {
@@ -128,7 +131,7 @@ export function Home({ filter = "all" }: { filter?: string }) {
       </section>
       <div className="search-bar">
         <Icon name="search" />
-        <input
+        <Input
           type="search"
           name="home-search"
           aria-label={t("搜索工具")}
@@ -153,7 +156,7 @@ export function Home({ filter = "all" }: { filter?: string }) {
           </Link>
         </div>
         <div className="featured-grid">
-          <article className="feature-card feature-world">
+          <Card as="article" className="feature-card feature-world">
             <div className="feature-top">
               <Icon name="globe" />
               <h3>{t("世界时间")}</h3>
@@ -183,9 +186,9 @@ export function Home({ filter = "all" }: { filter?: string }) {
                 <Icon name="right" />
               </Link>
             </div>
-          </article>
+          </Card>
           <CurrencyPreview />
-          <article className="feature-card feature-timestamp">
+          <Card as="article" className="feature-card feature-timestamp">
             <div className="feature-top">
               <Icon name="clock" />
               <h3>{t("时间戳转换")}</h3>
@@ -214,7 +217,7 @@ export function Home({ filter = "all" }: { filter?: string }) {
                 <Icon name="right" />
               </Link>
             </div>
-          </article>
+          </Card>
         </div>
       </section>
       <section id="all-tools">

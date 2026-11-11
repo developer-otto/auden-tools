@@ -1,5 +1,9 @@
 "use client";
-import { useMemo, useState } from "react";
+import { Card } from "../ui/card";
+import { Select, SelectItem } from "../ui/select";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { useId, useMemo, useState } from "react";
 import { timeZones } from "../../lib/catalog";
 import {
   formatLocal,
@@ -8,6 +12,7 @@ import {
   parseLocal,
 } from "../../lib/time";
 import { Icon } from "../icon";
+import { DatePicker } from "../ui/date-picker";
 import { useApp, useNow } from "../providers";
 import {
   CatalogPicker,
@@ -20,6 +25,7 @@ import {
 export default function TimestampTool() {
   const { t } = useApp(),
     now = useNow();
+  const inputId = useId();
   const [mode, setMode] = useState<"to-date" | "to-epoch">("to-date");
   const [epoch, setEpoch] = useState(() => String(Math.floor(now / 1000))),
     [local, setLocal] = useState(() =>
@@ -29,6 +35,11 @@ export default function TimestampTool() {
     [zone, setZone] = useState("Asia/Shanghai"),
     [overlap, setOverlap] = useState("earlier"),
     [picker, setPicker] = useState(false);
+  const [localDate = "", localTime = ""] = local.split("T");
+  function updateLocal(date: string, time: string) {
+    setLocal(`${date}T${time}`);
+    setOverlap("earlier");
+  }
   const selected = timeZones.find((item) => item.tz === zone)!;
   const result = useMemo(() => {
     try {
@@ -121,30 +132,30 @@ export default function TimestampTool() {
         </div>
       </div>
       <div className="detail-columns">
-        <section className="panel">
+        <Card as="section">
           <div className="conversion-tabs">
-            <button
+            <Button
               className={mode === "to-date" ? "active" : ""}
               aria-pressed={mode === "to-date"}
               onClick={() => changeMode("to-date")}
             >
               {t("时间戳 → 日期时间")}
-            </button>
-            <button
+            </Button>
+            <Button
               className={mode === "to-epoch" ? "active" : ""}
               aria-pressed={mode === "to-epoch"}
               onClick={() => changeMode("to-epoch")}
             >
               {t("日期时间 → 时间戳")}
-            </button>
+            </Button>
           </div>
-          <label className="input-label" htmlFor="timestamp-input">
+          <label className="input-label" htmlFor={inputId}>
             {t(mode === "to-date" ? "输入时间戳" : "输入当地日期时间")}
           </label>
           <div className="input-row">
             {mode === "to-date" ? (
-              <input
-                id="timestamp-input"
+              <Input
+                id={inputId}
                 className="field mono"
                 inputMode="numeric"
                 value={epoch}
@@ -152,37 +163,37 @@ export default function TimestampTool() {
                 onChange={(event) => setEpoch(event.target.value)}
               />
             ) : (
-              <input
-                id="timestamp-input"
-                className="field mono"
-                type="datetime-local"
-                step="0.001"
-                min="0001-01-01T00:00"
-                max="9999-12-31T23:59:59.999"
-                value={local}
-                onChange={(event) => {
-                  setLocal(event.target.value);
-                  setOverlap("earlier");
-                }}
-              />
+              <div className="datetime-fields">
+                <DatePicker
+                  id={inputId}
+                  value={localDate}
+                  onChange={(date) => updateLocal(date, localTime)}
+                />
+                <Input
+                  aria-label={t("时间")}
+                  className="field mono"
+                  type="time"
+                  step="0.001"
+                  value={localTime}
+                  onChange={(event) =>
+                    updateLocal(localDate, event.target.value)
+                  }
+                />
+              </div>
             )}
             {mode === "to-date" ? (
-              <select
+              <Select
                 name="timestamp-unit"
                 className="field"
                 value={unit}
                 aria-label={t("时间戳单位")}
-                onChange={(event) =>
-                  setUnit(
-                    event.target.value === "seconds"
-                      ? "seconds"
-                      : "milliseconds",
-                  )
+                onValueChange={(value) =>
+                  setUnit(value === "seconds" ? "seconds" : "milliseconds")
                 }
               >
-                <option value="seconds">{t("秒（s）")}</option>
-                <option value="milliseconds">{t("毫秒（ms）")}</option>
-              </select>
+                <SelectItem value="seconds">{t("秒（s）")}</SelectItem>
+                <SelectItem value="milliseconds">{t("毫秒（ms）")}</SelectItem>
+              </Select>
             ) : null}
           </div>
           <div className="field-group">
@@ -196,7 +207,7 @@ export default function TimestampTool() {
               </label>
               <span>{t("25 个时区可选")}</span>
             </div>
-            <button
+            <Button
               id="timezone-picker"
               className="timezone-picker"
               aria-labelledby="zone-field-label"
@@ -211,20 +222,20 @@ export default function TimestampTool() {
                 <small>{zone}</small>
               </span>
               <Icon name="down" />
-            </button>
+            </Button>
             <div className="zone-shortcuts">
               {["Asia/Shanghai", "UTC", "America/New_York", "Asia/Dubai"].map(
                 (tz) => {
                   const item = timeZones.find((item) => item.tz === tz)!;
                   return (
-                    <button
+                    <Button
                       key={tz}
                       className={tz === zone ? "active" : ""}
                       aria-pressed={tz === zone}
                       onClick={() => chooseZone(tz)}
                     >
                       {item.flag} {tz === "UTC" ? "UTC" : t(item.name)}
-                    </button>
+                    </Button>
                   );
                 },
               )}
@@ -235,22 +246,26 @@ export default function TimestampTool() {
               <label className="input-label" htmlFor="overlap">
                 {t("这个当地时间出现两次，请选择")}
               </label>
-              <select
+              <Select
                 className="field"
                 id="overlap"
                 value={overlap}
-                onChange={(event) => setOverlap(event.target.value)}
+                onValueChange={(value) => setOverlap(value)}
               >
-                <option value="earlier">{t("第一次（时钟回拨前）")}</option>
-                <option value="later">{t("第二次（时钟回拨后）")}</option>
-              </select>
+                <SelectItem value="earlier">
+                  {t("第一次（时钟回拨前）")}
+                </SelectItem>
+                <SelectItem value="later">
+                  {t("第二次（时钟回拨后）")}
+                </SelectItem>
+              </Select>
             </div>
           ) : null}
           <div className="button-row">
-            <button className="button primary" onClick={fillNow}>
+            <Button className="button primary" onClick={fillNow}>
               <Icon name="clock" />
               {t("使用当前时间")}
-            </button>
+            </Button>
           </div>
           <div className="results-box">
             <div className="results-title">
@@ -279,8 +294,8 @@ export default function TimestampTool() {
               {t(result.error)}
             </p>
           ) : null}
-        </section>
-        <aside className="panel">
+        </Card>
+        <Card as="aside">
           <div className="panel-heading">
             <h2>{t("关于时间与时区")}</h2>
             <Icon name="globe" />
@@ -319,7 +334,7 @@ export default function TimestampTool() {
             </div>
           </div>
           <Notice>{t("输入内容仅在当前浏览器中处理。")}</Notice>
-        </aside>
+        </Card>
       </div>
       {picker ? (
         <CatalogPicker

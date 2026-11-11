@@ -1,8 +1,12 @@
 "use client";
+import { Card } from "../ui/card";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 import { useState } from "react";
 import { addDays, daysBetween } from "../../lib/dates";
 import { formatLocal } from "../../lib/time";
 import { Icon } from "../icon";
+import { DatePicker } from "../ui/date-picker";
 import { useApp, useNow } from "../providers";
 import { DetailHeader } from "../shared";
 
@@ -31,7 +35,7 @@ export default function DateTool() {
     <>
       <DetailHeader id="date" description="从今天到那一天，每一天都算数。" />
       <div className="detail-columns">
-        <section className="panel">
+        <Card as="section">
           <div className="panel-heading">
             <h2>{t("计算日期间隔")}</h2>
             <span className="subtle">{t("按自然日计算")}</span>
@@ -41,29 +45,13 @@ export default function DateTool() {
               <label className="input-label" htmlFor="date-start">
                 {t("开始日期")}
               </label>
-              <input
-                className="field"
-                type="date"
-                id="date-start"
-                min="0001-01-01"
-                max="9999-12-31"
-                value={start}
-                onChange={(event) => setStart(event.target.value)}
-              />
+              <DatePicker id="date-start" value={start} onChange={setStart} />
             </div>
             <div className="field-group">
               <label className="input-label" htmlFor="date-end">
                 {t("结束日期")}
               </label>
-              <input
-                className="field"
-                type="date"
-                id="date-end"
-                min="0001-01-01"
-                max="9999-12-31"
-                value={end}
-                onChange={(event) => setEnd(event.target.value)}
-              />
+              <DatePicker id="date-end" value={end} onChange={setEnd} />
             </div>
           </div>
           <div className="results-box date-result">
@@ -85,13 +73,13 @@ export default function DateTool() {
             </p>
           ) : null}
           <div className="button-row">
-            <button className="button primary" onClick={() => setStart(today)}>
+            <Button className="button primary" onClick={() => setStart(today)}>
               <Icon name="calendar" />
               {t("从今天开始")}
-            </button>
+            </Button>
           </div>
-        </section>
-        <aside className="panel">
+        </Card>
+        <Card as="aside">
           <div className="panel-heading">
             <h2>{t("日期加减")}</h2>
           </div>
@@ -99,21 +87,13 @@ export default function DateTool() {
             <label className="input-label" htmlFor="date-base">
               {t("起始日期")}
             </label>
-            <input
-              className="field"
-              id="date-base"
-              type="date"
-              min="0001-01-01"
-              max="9999-12-31"
-              value={base}
-              onChange={(event) => setBase(event.target.value)}
-            />
+            <DatePicker id="date-base" value={base} onChange={setBase} />
           </div>
           <div className="field-group">
             <label className="input-label" htmlFor="date-offset">
               {t("增加或减少天数")}
             </label>
-            <input
+            <Input
               className="field"
               id="date-offset"
               inputMode="numeric"
@@ -132,7 +112,7 @@ export default function DateTool() {
               {offsetError}
             </p>
           ) : null}
-        </aside>
+        </Card>
       </div>
     </>
   );

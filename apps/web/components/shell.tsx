@@ -1,4 +1,14 @@
 "use client";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
+} from "./ui/sheet";
+import { Select, SelectItem } from "./ui/select";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
@@ -24,10 +34,9 @@ function SearchDialog({ onClose }: { onClose: () => void }) {
     <Modal title="快速查找" onClose={onClose}>
       <div className="catalog-search">
         <Icon name="search" />
-        <input
+        <Input
           type="search"
           name="tool-search"
-          autoFocus
           aria-label={t("搜索全部工具")}
           placeholder={t("搜索工具名称或关键词…")}
           value={query}
@@ -45,7 +54,7 @@ function SearchDialog({ onClose }: { onClose: () => void }) {
       <div className="dialog-results">
         {matches.length ? (
           matches.map((tool) => (
-            <button
+            <Button
               key={tool.id}
               className="search-result"
               onClick={() => open(tool.id)}
@@ -56,7 +65,7 @@ function SearchDialog({ onClose }: { onClose: () => void }) {
                 <small>{t(tool.desc)}</small>
               </span>
               <Icon name="right" />
-            </button>
+            </Button>
           ))
         ) : (
           <p className="catalog-empty">
@@ -106,167 +115,185 @@ export function AppShell({ children }: { children: ReactNode }) {
         setMenuOpen(false);
         router.push("/");
       }
-      if (event.key === "Escape") setMenuOpen(false);
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [router]);
   const closeMenu = () => setMenuOpen(false);
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 700px)");
+    const closeOnDesktop = () => {
+      if (!query.matches) setMenuOpen(false);
+    };
+    query.addEventListener("change", closeOnDesktop);
+    return () => query.removeEventListener("change", closeOnDesktop);
+  }, []);
+  const sidebar = (
+    <>
+      <Link
+        href="/"
+        className="brand"
+        aria-label={t("Auden Tools 首页")}
+        onClick={closeMenu}
+      >
+        <span className="brand-mark">
+          <i />
+          <i />
+          <i />
+          <i />
+        </span>
+        <span>
+          auden<span className="brand-light">.tools</span>
+          <small>{t("日常工具，触手可及")}</small>
+        </span>
+      </Link>
+      <nav aria-label={t("主导航")}>
+        <p className="nav-caption">{t("工作空间")}</p>
+        <Link
+          href="/"
+          className={`nav-item ${filter === "all" ? "active" : ""}`}
+          onClick={closeMenu}
+        >
+          <Icon name="grid" />
+          {t("工具首页")}
+          <span className="nav-key">⌘ 1</span>
+        </Link>
+        <Link
+          href="/?filter=favorites"
+          className={`nav-item ${filter === "favorites" ? "active" : ""}`}
+          onClick={closeMenu}
+        >
+          <Icon name="star" />
+          {t("我的收藏")}
+          <span className="nav-count">{favorites.length}</span>
+        </Link>
+        <Link
+          href="/?filter=recent"
+          className={`nav-item ${filter === "recent" ? "active" : ""}`}
+          onClick={closeMenu}
+        >
+          <Icon name="history" />
+          {t("最近使用")}
+        </Link>
+        <p className="nav-caption category-caption">{t("工具分类")}</p>
+        {Object.entries(categories).map(([key, name]) => (
+          <Link
+            key={key}
+            href={`/?filter=${key}`}
+            className={`nav-item ${filter === key || current?.category === key ? "active" : ""}`}
+            onClick={closeMenu}
+          >
+            <Icon
+              name={
+                key === "time"
+                  ? "clock"
+                  : key === "convert"
+                    ? "arrows"
+                    : key === "files"
+                      ? "files"
+                      : "text"
+              }
+            />
+            {t(name)}
+            <span className="nav-count">
+              {tools.filter((tool) => tool.category === key).length}
+            </span>
+          </Link>
+        ))}
+      </nav>
+      <div className="sidebar-bottom">
+        <div className="quiet-note">
+          <span className="little-spark">✳</span>
+          <p>{t("小工具，大有用处。")}</p>
+          <small>{t("把时间留给更重要的事。")}</small>
+        </div>
+        <Button
+          className="quick-search"
+          onClick={() => {
+            closeMenu();
+            setSearchOpen(true);
+          }}
+        >
+          <Icon name="search" />
+          {t("快速查找")}
+          <kbd>⌘ K</kbd>
+        </Button>
+        <div className="sidebar-footer">
+          <span>
+            Auden Tools <b>V1.0</b>
+          </span>
+          <Button
+            className="icon-btn"
+            onClick={toggleTheme}
+            aria-label={t("切换深浅色")}
+          >
+            <Icon name={theme === "dark" ? "moon" : "sun"} />
+          </Button>
+        </div>
+      </div>
+    </>
+  );
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">
         {t("跳转到内容")}
       </a>
-      {menuOpen ? (
-        <button
-          className="nav-backdrop"
-          aria-label={t("关闭")}
-          onClick={closeMenu}
-        />
-      ) : null}
-      <aside className={`sidebar ${menuOpen ? "open" : ""}`} id="sidebar">
-        <Link
-          href="/"
-          className="brand"
-          aria-label={t("Auden Tools 首页")}
-          onClick={closeMenu}
-        >
-          <span className="brand-mark">
-            <i />
-            <i />
-            <i />
-            <i />
-          </span>
-          <span>
-            auden<span className="brand-light">.tools</span>
-            <small>{t("日常工具，触手可及")}</small>
-          </span>
-        </Link>
-        <nav aria-label={t("主导航")}>
-          <p className="nav-caption">{t("工作空间")}</p>
-          <Link
-            href="/"
-            className={`nav-item ${filter === "all" ? "active" : ""}`}
-            onClick={closeMenu}
-          >
-            <Icon name="grid" />
-            {t("工具首页")}
-            <span className="nav-key">⌘ 1</span>
-          </Link>
-          <Link
-            href="/?filter=favorites"
-            className={`nav-item ${filter === "favorites" ? "active" : ""}`}
-            onClick={closeMenu}
-          >
-            <Icon name="star" />
-            {t("我的收藏")}
-            <span className="nav-count">{favorites.length}</span>
-          </Link>
-          <Link
-            href="/?filter=recent"
-            className={`nav-item ${filter === "recent" ? "active" : ""}`}
-            onClick={closeMenu}
-          >
-            <Icon name="history" />
-            {t("最近使用")}
-          </Link>
-          <p className="nav-caption category-caption">{t("工具分类")}</p>
-          {Object.entries(categories).map(([key, name]) => (
-            <Link
-              key={key}
-              href={`/?filter=${key}`}
-              className={`nav-item ${filter === key || current?.category === key ? "active" : ""}`}
-              onClick={closeMenu}
-            >
-              <Icon
-                name={
-                  key === "time"
-                    ? "clock"
-                    : key === "convert"
-                      ? "arrows"
-                      : key === "files"
-                        ? "files"
-                        : "text"
-                }
-              />
-              {t(name)}
-              <span className="nav-count">
-                {tools.filter((tool) => tool.category === key).length}
-              </span>
-            </Link>
-          ))}
-        </nav>
-        <div className="sidebar-bottom">
-          <div className="quiet-note">
-            <span className="little-spark">✳</span>
-            <p>{t("小工具，大有用处。")}</p>
-            <small>{t("把时间留给更重要的事。")}</small>
-          </div>
-          <button
-            className="quick-search"
-            onClick={() => {
-              closeMenu();
-              setSearchOpen(true);
-            }}
-          >
-            <Icon name="search" />
-            {t("快速查找")}
-            <kbd>⌘ K</kbd>
-          </button>
-          <div className="sidebar-footer">
-            <span>
-              Auden Tools <b>V1.0</b>
-            </span>
-            <button
-              className="icon-btn"
-              onClick={toggleTheme}
-              aria-label={t("切换深浅色")}
-            >
-              <Icon name={theme === "dark" ? "moon" : "sun"} />
-            </button>
-          </div>
-        </div>
-      </aside>
+      <aside className="sidebar sidebar-desktop">{sidebar}</aside>
       <div className="main-shell">
         <header className="topbar">
           <div className="breadcrumb">
-            <button
-              className="icon-btn mobile-menu"
-              aria-label={t("打开导航")}
-              aria-expanded={menuOpen}
-              aria-controls="sidebar"
-              onClick={() => setMenuOpen((open) => !open)}
-            >
-              <Icon name="menu" />
-            </button>
+            <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+              <SheetTrigger asChild>
+                <Button
+                  className="icon-btn mobile-menu"
+                  aria-label={t("打开导航")}
+                >
+                  <Icon name="menu" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent
+                className="sidebar sidebar-sheet"
+                aria-describedby={undefined}
+              >
+                <SheetTitle className="sr-only">{t("主导航")}</SheetTitle>
+                <SheetClose asChild>
+                  <Button
+                    className="icon-btn sidebar-sheet-close"
+                    aria-label={t("关闭")}
+                  >
+                    <Icon name="close" />
+                  </Button>
+                </SheetClose>
+                {sidebar}
+              </SheetContent>
+            </Sheet>
             <span>{t("工作空间")}</span>
             <span className="slash">/</span>
             <strong>{t(currentName)}</strong>
           </div>
           <div className="topbar-actions">
-            <label className="language-switch">
+            <div className="language-switch">
               <Icon name="globe" />
-              <select
+              <Select
                 name="locale"
                 aria-label={t("界面语言")}
                 value={locale}
-                onChange={(event) => {
-                  if (isLocale(event.target.value))
-                    setLocale(event.target.value);
+                onValueChange={(value) => {
+                  if (isLocale(value)) setLocale(value);
                 }}
               >
                 {locales.map((value) => (
-                  <option key={value} value={value} lang={value}>
+                  <SelectItem key={value} value={value} lang={value}>
                     {languageNames[value]}
-                  </option>
+                  </SelectItem>
                 ))}
-              </select>
-            </label>
+              </Select>
+            </div>
             <span className="prototype-label">
               <i />
               {t("即开即用")}
             </span>
-            <button
+            <Button
               className="icon-btn"
               aria-label={t("使用说明")}
               onClick={() =>
@@ -276,7 +303,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               }
             >
               <Icon name="help" />
-            </button>
+            </Button>
           </div>
         </header>
         <main id="main-content">{children}</main>

@@ -1,4 +1,7 @@
 "use client";
+import { Card } from "../ui/card";
+import { Select, SelectItem } from "../ui/select";
+import { Input } from "../ui/input";
 import { useState } from "react";
 import { format } from "../../lib/decimal";
 import { convertUnit, unitGroups, type UnitGroup } from "../../lib/units";
@@ -37,28 +40,28 @@ export default function UnitsTool() {
         description="熟悉的数值，不同的单位。换算变得简单。"
       />
       <div className="detail-columns">
-        <section className="panel">
+        <Card as="section">
           <div className="panel-heading">
             <h2>{t("单位换算")}</h2>
-            <select
+            <Select
               name="unit-group"
               className="field compact-field"
               aria-label={t("换算类别")}
               value={group}
-              onChange={(event) => changeGroup(event.target.value as UnitGroup)}
+              onValueChange={(value) => changeGroup(value as UnitGroup)}
             >
               {Object.entries(unitGroups).map(([id, item]) => (
-                <option key={id} value={id}>
+                <SelectItem key={id} value={id}>
                   {t(item.name)}
-                </option>
+                </SelectItem>
               ))}
-            </select>
+            </Select>
           </div>
           <label className="input-label" htmlFor="unit-value">
             {t("输入数值")}
           </label>
           <div className="input-row">
-            <input
+            <Input
               id="unit-value"
               className="field"
               inputMode="decimal"
@@ -66,36 +69,36 @@ export default function UnitsTool() {
               value={value}
               onChange={(event) => setValue(event.target.value)}
             />
-            <select
+            <Select
               name="unit-from"
               className="field"
               aria-label={t("原始单位")}
               value={from}
-              onChange={(event) => setFrom(event.target.value)}
+              onValueChange={(value) => setFrom(value)}
             >
               {list.map((unit) => (
-                <option key={unit.id} value={unit.id}>
+                <SelectItem key={unit.id} value={unit.id}>
                   {t(unit.name)}
-                </option>
+                </SelectItem>
               ))}
-            </select>
+            </Select>
           </div>
           <div className="field-group">
             <label className="input-label" htmlFor="unit-to">
               {t("转换为")}
             </label>
-            <select
+            <Select
               id="unit-to"
               className="field"
               value={to}
-              onChange={(event) => setTo(event.target.value)}
+              onValueChange={(value) => setTo(value)}
             >
               {list.map((unit) => (
-                <option key={unit.id} value={unit.id}>
+                <SelectItem key={unit.id} value={unit.id}>
                   {t(unit.name)}
-                </option>
+                </SelectItem>
               ))}
-            </select>
+            </Select>
           </div>
           <div className="results-box">
             <div className="results-title">
@@ -116,8 +119,8 @@ export default function UnitsTool() {
               {error}
             </p>
           ) : null}
-        </section>
-        <aside className="panel">
+        </Card>
+        <Card as="aside">
           <div className="panel-heading">
             <h2>{t("常用关系")}</h2>
             <Icon name="ruler" />
@@ -136,7 +139,7 @@ export default function UnitsTool() {
               </div>
             ))}
           </div>
-        </aside>
+        </Card>
       </div>
     </>
   );

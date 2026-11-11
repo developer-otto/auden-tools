@@ -132,6 +132,7 @@ const shapes: Record<string, ReactNode> = {
       <path d="M20 12H5m5-5-5 5 5 5" />
     </>
   ),
+  "chevron-down": <path d="m6 9 6 6 6-6" />,
   down: (
     <>
       <path d="M12 4v15m-5-5 5 5 5-5" />

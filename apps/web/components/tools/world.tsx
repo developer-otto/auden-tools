@@ -1,4 +1,8 @@
 "use client";
+import { Card } from "../ui/card";
+import { Badge } from "../ui/badge";
+import { Select, SelectItem } from "../ui/select";
+import { Button } from "../ui/button";
 import { memo, useMemo, useState } from "react";
 import { cities, defaultCities, type City } from "../../lib/catalog";
 import { usePreference } from "../../lib/preferences";
@@ -10,6 +14,7 @@ import {
   timeIn,
 } from "../../lib/time";
 import { Icon } from "../icon";
+import { DatePicker } from "../ui/date-picker";
 import { useApp, useNow } from "../providers";
 import {
   AnalogClock,
@@ -54,7 +59,7 @@ function CityCard({
           {t(city.name)}
         </h3>
         {city.local ? (
-          <span className="local-badge">{t("参考城市")}</span>
+          <Badge className="local-badge">{t("参考城市")}</Badge>
         ) : (
           <Icon name={night ? "moon" : "sun"} />
         )}
@@ -121,7 +126,7 @@ const Meeting = memo(function Meeting({
         .join(" · ")
     : "";
   return (
-    <section className="panel">
+    <Card as="section">
       <div className="panel-heading">
         <h2 className="meeting-title">
           <Icon name="calendar" />
@@ -131,36 +136,28 @@ const Meeting = memo(function Meeting({
       </div>
       <div className="meeting-inputs">
         <label htmlFor="meeting-date">{t("计划日期")}</label>
-        <input
-          className="field"
-          id="meeting-date"
-          type="date"
-          min="0001-01-01"
-          max="9999-12-31"
-          value={date}
-          onChange={(event) => setDate(event.target.value)}
-        />
+        <DatePicker id="meeting-date" value={date} onChange={setDate} />
         <label htmlFor="meeting-hour">{t("上海时间")}</label>
-        <select
+        <Select
           id="meeting-hour"
           className="field"
           value={hour}
-          onChange={(event) => setHour(Number(event.target.value))}
+          onValueChange={(value) => setHour(Number(value))}
         >
           {Array.from({ length: 12 }, (_, index) => (
-            <option key={index} value={index + 8}>
+            <SelectItem key={index} value={index + 8}>
               {String(index + 8).padStart(2, "0")}:00
-            </option>
+            </SelectItem>
           ))}
-        </select>
-        <button
+        </Select>
+        <Button
           className="button small"
           disabled={!summary}
           onClick={() => copy(summary)}
         >
           <Icon name="copy" />
           {t("复制时间")}
-        </button>
+        </Button>
       </div>
       {reference.length ? (
         <div
@@ -182,7 +179,7 @@ const Meeting = memo(function Meeting({
                   const p = dateParts(date, city.tz),
                     h = Number(p.hour);
                   return (
-                    <button
+                    <Button
                       key={date.getTime()}
                       className={`timeline-cell ${h >= 9 && h < 18 ? "work" : ""} ${hour === index + 8 ? "selected" : ""}`}
                       onClick={() => setHour(index + 8)}
@@ -190,7 +187,7 @@ const Meeting = memo(function Meeting({
                       aria-pressed={hour === index + 8}
                     >
                       {p.hour}
-                    </button>
+                    </Button>
                   );
                 })}
               </div>
@@ -215,7 +212,7 @@ const Meeting = memo(function Meeting({
         </span>
       </div>
       {summary ? <Notice icon="globe">{summary}</Notice> : null}
-    </section>
+    </Card>
   );
 });
 export default function WorldTool() {
@@ -235,26 +232,26 @@ export default function WorldTool() {
         id="world"
         description="此刻的世界，一眼尽收。找到适合彼此的时间。"
       >
-        <button
+        <Button
           className="button primary"
           aria-label={t("管理城市")}
           onClick={() => setPicker(true)}
         >
           <Icon name="plus" />
           {t("管理城市")}
-        </button>
+        </Button>
       </DetailHeader>
       <div className="world-toolbar">
         <div className="segmented">
           {[false, true].map((value) => (
-            <button
+            <Button
               key={String(value)}
               className={value === hour12 ? "active" : ""}
               aria-pressed={value === hour12}
               onClick={() => setHour12(value)}
             >
               {t(value ? "12 小时制" : "24 小时制")}
-            </button>
+            </Button>
           ))}
         </div>
         <span className="world-now">
@@ -271,15 +268,15 @@ export default function WorldTool() {
           {t("已关注 {count} 个", { count: selected.length })}
         </span>
         <div>
-          <button className="text-btn" onClick={selectAll}>
+          <Button className="text-btn" onClick={selectAll}>
             {t("显示全部 24 城市")}
-          </button>
-          <button
+          </Button>
+          <Button
             className="text-btn"
             onClick={() => setSelected(defaultCities)}
           >
             {t("恢复常用")}
-          </button>
+          </Button>
         </div>
       </div>
       <div className="city-grid">

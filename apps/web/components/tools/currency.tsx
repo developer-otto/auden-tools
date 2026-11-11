@@ -1,4 +1,9 @@
 "use client";
+import { Card } from "../ui/card";
+import { Badge } from "../ui/badge";
+import { Select, SelectItem } from "../ui/select";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 import { useId, useMemo, useState } from "react";
 import {
   currencies,
@@ -73,26 +78,26 @@ function RateTrend({ base }: { base: string }) {
     return { first, last, high, low, line, change };
   }, [data]);
   return (
-    <section className="panel">
+    <Card as="section">
       <div className="panel-heading">
         <h2>
           {base} / {quote}
         </h2>
-        <select
+        <Select
           name="chart-quote"
           className="field compact-field"
           value={quote}
           aria-label={t("走势对照货币")}
-          onChange={(event) => setPreferred(event.target.value)}
+          onValueChange={(value) => setPreferred(value)}
         >
           {currencies
             .filter((currency) => currency.code !== base)
             .map((currency) => (
-              <option key={currency.code} value={currency.code}>
+              <SelectItem key={currency.code} value={currency.code}>
                 {currency.code}
-              </option>
+              </SelectItem>
             ))}
-        </select>
+        </Select>
       </div>
       <p className="muted small-copy">{t("过去 30 天")}</p>
       {chart ? (
@@ -178,11 +183,11 @@ function RateTrend({ base }: { base: string }) {
         </p>
       )}
       {error ? (
-        <button className="text-btn" onClick={retry}>
+        <Button className="text-btn" onClick={retry}>
           {t("重试")}
-        </button>
+        </Button>
       ) : null}
-    </section>
+    </Card>
   );
 }
 export default function CurrencyTool() {
@@ -251,33 +256,33 @@ export default function CurrencyTool() {
         id="currency"
         description="24 种常见货币，带上熟悉的旗帜。一个金额，一次看清。"
       >
-        <button
+        <Button
           className="button primary"
           aria-label={t("管理货币")}
           onClick={() => setPicker("targets")}
         >
           <Icon name="plus" />
           {t("管理货币")}
-        </button>
+        </Button>
       </DetailHeader>
       <div className="detail-columns currency-columns">
-        <section className="panel">
+        <Card as="section">
           <div className="panel-heading">
             <h2>{t("多币种换算")}</h2>
-            <span className="reference-badge">{t("每日参考汇率")}</span>
+            <Badge className="reference-badge">{t("每日参考汇率")}</Badge>
           </div>
           <label className="input-label" htmlFor="currency-amount">
             {t("输入金额")}
           </label>
           <div className="amount-input">
-            <input
+            <Input
               id="currency-amount"
               inputMode="decimal"
               maxLength={220}
               value={amount}
               onChange={(event) => setAmount(event.target.value)}
             />
-            <button
+            <Button
               className="currency-base-picker"
               aria-label={t("选择基础货币，目前为{name}", {
                 name: t(base.name),
@@ -290,7 +295,7 @@ export default function CurrencyTool() {
                 <small>{t(base.name)}</small>
               </span>
               <Icon name="down" />
-            </button>
+            </Button>
           </div>
           {!valid && amount ? (
             <p className="validation-error" role="alert">
@@ -306,9 +311,9 @@ export default function CurrencyTool() {
                     : "暂时无法获取汇率，请稍后重试。",
                 )}
               </span>
-              <button className="button small" onClick={retry}>
+              <Button className="button small" onClick={retry}>
                 {t("重试")}
-              </button>
+              </Button>
             </div>
           ) : null}
           <div className="currency-results-heading">
@@ -321,10 +326,10 @@ export default function CurrencyTool() {
                 })}
               </span>
             </div>
-            <button className="text-btn" onClick={selectAll}>
+            <Button className="text-btn" onClick={selectAll}>
               {t("显示全部 {count} 种", { count: currencies.length - 1 })}
               <Icon name="right" />
-            </button>
+            </Button>
           </div>
           <div className="currency-list" aria-busy={loading}>
             {shown.length ? (
@@ -377,7 +382,7 @@ export default function CurrencyTool() {
                         disabled={rounded === null}
                         label={t("复制{name}金额", { name: t(currency.name) })}
                       />
-                      <button
+                      <Button
                         className="icon-btn remove-currency"
                         aria-label={t("移除{name}", { name: t(currency.name) })}
                         onClick={() =>
@@ -387,7 +392,7 @@ export default function CurrencyTool() {
                         }
                       >
                         <Icon name="close" />
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 );
@@ -399,10 +404,10 @@ export default function CurrencyTool() {
               </div>
             )}
           </div>
-          <button className="add-currency" onClick={() => setPicker("targets")}>
+          <Button className="add-currency" onClick={() => setPicker("targets")}>
             <Icon name="plus" />
             {t("管理货币 · 搜索 24 种常用币种")}
-          </button>
+          </Button>
           <p className="precision-note">
             {t("按币种小数位四舍五入，计算过程保留精度。")}
           </p>
@@ -419,11 +424,11 @@ export default function CurrencyTool() {
               </a>{" "}
               · {t("数据日期")}：{dateLabel}
             </span>
-            <button className="text-btn" disabled={loading} onClick={retry}>
+            <Button className="text-btn" disabled={loading} onClick={retry}>
               {t(loading ? "加载汇率…" : "刷新")}
-            </button>
+            </Button>
           </div>
-        </section>
+        </Card>
         <aside className="detail-side">
           <RateTrend base={baseCode} />
           <section className="tip-panel">
