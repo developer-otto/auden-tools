@@ -187,6 +187,7 @@ const initialProgress = {
 
 function errorMessage(status: number) {
   if (status === 401) return "访问码无效。";
+  if (status === 503) return "Agents 尚未配置。";
   if (status === 429) return "请求过多，请稍后再试。";
   if (status === 424) return "当前项目无法使用所选模型，请换一个模型。";
   return "暂时无法生成回复，请重试。";
@@ -595,7 +596,7 @@ function AgentSetup({
               ? "设置从下一条消息生效，保留当前对话。"
               : access
                 ? "新对话会沿用已保存的访问码。"
-                : "输入你的 OpenAI API Key 或站点访问码，凭据会保存在当前浏览器。",
+                : "输入访问码即可进入聊天。",
           )}
         </DialogDescription>
         <form
@@ -616,7 +617,7 @@ function AgentSetup({
           {!access ? (
             <div>
               <label className="input-label" htmlFor="agents-access">
-                {t("访问码")} / OpenAI API Key
+                {t("访问码")}
               </label>
               <Input
                 className="field"

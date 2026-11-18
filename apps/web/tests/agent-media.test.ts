@@ -1,15 +1,25 @@
 import assert from "node:assert/strict";
-import { test } from "node:test";
+import { afterEach, beforeEach, test } from "node:test";
 import { POST as chat } from "../app/api/agents/route.ts";
 import { POST as speech } from "../app/api/agents/speech/route.ts";
 import { POST as transcribe } from "../app/api/agents/transcribe/route.ts";
 import { maxAgentAudioBytes } from "../lib/agent-media.ts";
 
-const request = (body: BodyInit, type: string, key = "test-only-key") =>
+const serverKey = "test-media-server-key";
+const previousKey = process.env.OPENAI_API_KEY;
+beforeEach(() => {
+  process.env.OPENAI_API_KEY = serverKey;
+});
+afterEach(() => {
+  if (previousKey === undefined) delete process.env.OPENAI_API_KEY;
+  else process.env.OPENAI_API_KEY = previousKey;
+});
+
+const request = (body: BodyInit, type: string, access = "test-media-access") =>
   new Request("https://example.test/api/agents", {
     method: "POST",
     body,
-    headers: { "x-agents-access-code": key, "content-type": type },
+    headers: { "x-agents-access-code": access, "content-type": type },
   });
 
 test("web search is opt-in and returns safe inline citations", async (t) => {
@@ -80,14 +90,14 @@ test("web search is opt-in and returns safe inline citations", async (t) => {
   });
 });
 
-test("audio endpoints forward the user's key and reject oversized or unsupported recordings", async (t) => {
+test("audio endpoints use the server key and reject oversized or unsupported recordings", async (t) => {
   const upstream = t.mock.method(
     globalThis,
     "fetch",
     async (url: string, options: RequestInit) => {
       assert.equal(
         new Headers(options.headers).get("authorization"),
-        "Bearer test-only-key",
+        `Bearer ${serverKey}`,
       );
       if (String(url).endsWith("/transcriptions")) {
         const body = options.body as FormData;

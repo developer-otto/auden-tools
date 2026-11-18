@@ -1,8 +1,18 @@
 import assert from "node:assert/strict";
-import { test } from "node:test";
+import { afterEach, beforeEach, test } from "node:test";
 import { POST } from "../app/api/agents/route.ts";
 import { agentStreamType, readAgentStream } from "../lib/agent-stream.ts";
 import { streamAgentReply } from "../lib/server/agent-stream-response.ts";
+
+const serverKey = "test-advanced-server-key";
+const previousKey = process.env.OPENAI_API_KEY;
+beforeEach(() => {
+  process.env.OPENAI_API_KEY = serverKey;
+});
+afterEach(() => {
+  if (previousKey === undefined) delete process.env.OPENAI_API_KEY;
+  else process.env.OPENAI_API_KEY = previousKey;
+});
 
 const replyMessage = {
   id: "msg_1",
@@ -13,7 +23,7 @@ const replyMessage = {
 };
 const webp = "UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEAAUAmJaQAA3AA/v89WAAAAA==";
 
-function request(body: object = {}, access = "test-user-key", accept?: string) {
+function request(body: object = {}, access = "test-access-code", accept?: string) {
   return new Request("http://localhost/api/agents", {
     method: "POST",
     headers: { "x-agents-access-code": access, ...(accept ? { accept } : {}) },
@@ -101,7 +111,7 @@ test("chat streams deltas and a final reply while keeping response storage off",
       );
     },
   );
-  const response = await POST(request({}, "test-user-key", agentStreamType));
+  const response = await POST(request({}, "test-access-code", agentStreamType));
   assert.equal(response.headers.get("cache-control"), "no-store");
   assert.match(response.headers.get("content-type") ?? "", /x-ndjson/);
   const events: unknown[] = [];
@@ -208,18 +218,7 @@ test("advanced tools use the fixed docs MCP and share only validated inline atta
   assert.equal(upstream.mock.callCount(), 1);
 });
 
-test("the configured site key is used only when the site code matches", async (t) => {
-  for (const [name, value] of [
-    ["OPENAI_API_KEY", "test-server-key"],
-    ["AUDEN_AGENTS_ACCESS_CODE", "test-site-code"],
-  ] as const) {
-    const previous = process.env[name];
-    process.env[name] = value;
-    t.after(() => {
-      if (previous === undefined) delete process.env[name];
-      else process.env[name] = previous;
-    });
-  }
+test("access codes never become OpenAI credentials", async (t) => {
   const authorizations: (string | null)[] = [];
   t.mock.method(
     globalThis,
@@ -230,12 +229,15 @@ test("the configured site key is used only when the site code matches", async (t
     },
   );
   assert.equal((await POST(request({}, ""))).status, 401);
-  assert.equal((await POST(request({}, "test-user-key"))).status, 200);
-  assert.equal((await POST(request({}, "test-site-code"))).status, 200);
+  assert.equal((await POST(request({}, "test-access-code"))).status, 200);
+  assert.equal((await POST(request({}, "sk-test-client-supplied"))).status, 200);
   assert.deepEqual(authorizations, [
-    "Bearer test-user-key",
-    "Bearer test-server-key",
+    `Bearer ${serverKey}`,
+    `Bearer ${serverKey}`,
   ]);
+  delete process.env.OPENAI_API_KEY;
+  assert.equal((await POST(request({}, "test-access-code"))).status, 503);
+  assert.equal(authorizations.length, 2);
 });
 
 test("discovery loads an allowlisted tool and returns its result to the hosted program", async (t) => {

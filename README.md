@@ -78,7 +78,7 @@ GitHub 仓库已经连接 Vercel。推送 `main` 更新正式站，其他分支/
 
 ## Agents（可选）
 
-访问 `/tools/agents`，在「会话设置」输入自己的 OpenAI API Key。若部署者提供站点访问码，也可用它进入聊天。站点共用密钥需要同时配置服务端的 `OPENAI_API_KEY` 和 `AUDEN_AGENTS_ACCESS_CODE`，请求必须匹配站点访问码才会使用共用密钥。浏览器保存的凭据可通过「清除访问码」移除。
+部署时在服务端配置 `OPENAI_API_KEY`。聊天、转写和朗读调用 OpenAI 时统一使用这个密钥。访问 `/tools/agents` 后，在「会话设置」输入访问码即可进入聊天。访问码保存在当前浏览器，可通过「清除访问码」移除。接口只要求携带非空访问码，如需限制谁能调用接口，请使用部署层的访问控制。
 
 聊天用 OpenAI Agents SDK 执行并流式返回文字及工具状态。取消会停止本次请求。Responses API 使用 `store: false`，SDK 追踪关闭。已完成的消息文字和会话设置仅保存在当前浏览器，最多保留 8 个会话，每个会话最近 24 条消息。续聊时会发送近期上下文。服务商数据保留政策见 [OpenAI 数据控制](https://developers.openai.com/api/docs/guides/your-data)。
 

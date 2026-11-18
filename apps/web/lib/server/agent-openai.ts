@@ -1,4 +1,3 @@
-import { timingSafeEqual } from "node:crypto";
 import OpenAI from "openai";
 
 export const noStore = { "Cache-Control": "no-store" };
@@ -9,21 +8,16 @@ export function agentError(status: number) {
 
 export function agentClient(request: Request) {
   const access = request.headers.get("x-agents-access-code")?.trim();
-  if (!access || access.length > 1024) return null;
-  const sharedCode = process.env.AUDEN_AGENTS_ACCESS_CODE?.trim();
+  if (!access || access.length > 1024) return agentError(401);
   const serverKey = process.env.OPENAI_API_KEY?.trim();
-  const provided = Buffer.from(access);
-  const expected = Buffer.from(sharedCode ?? "");
-  const isShared =
-    serverKey &&
-    provided.length === expected.length &&
-    timingSafeEqual(provided, expected);
-  return new OpenAI({ apiKey: isShared ? serverKey : access });
+  if (!serverKey) return agentError(503);
+  return new OpenAI({ apiKey: serverKey });
 }
 
 export function upstreamAgentStatus(error: unknown) {
   if (error instanceof OpenAI.APIError) {
-    if (error.status === 401 || error.status === 429) return error.status;
+    if (error.status === 401) return 503;
+    if (error.status === 429) return 429;
     if (
       error.status === 403 ||
       error.status === 404 ||

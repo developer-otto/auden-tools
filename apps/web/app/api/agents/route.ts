@@ -42,7 +42,7 @@ function isTurn(value: unknown): value is AgentTurn {
 
 export async function POST(request: Request) {
   const client = agentClient(request);
-  if (!client) return fail(401);
+  if (client instanceof Response) return client;
 
   let body: unknown;
   let size: number;

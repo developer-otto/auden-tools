@@ -13,13 +13,6 @@
     "設定は次のメッセージから適用され、現在の会話は保持されます。",
     "설정은 다음 메시지부터 적용되며 현재 대화는 유지됩니다."
   ],
-  "输入你的 OpenAI API Key 或站点访问码，凭据会保存在当前浏览器。": [
-    "输入你的 OpenAI API Key 或站点访问码，凭据会保存在当前浏览器。",
-    "輸入你的 OpenAI API Key 或站點存取碼，憑證會儲存在目前的瀏覽器。",
-    "Enter your OpenAI API key or site access code. It is saved in this browser.",
-    "OpenAI API キーまたはサイトのアクセスコードを入力してください。このブラウザーに保存されます。",
-    "OpenAI API 키 또는 사이트 접근 코드를 입력하세요. 이 브라우저에 저장됩니다."
-  ],
   "正在使用工具…": [
     "正在使用工具…",
     "正在使用工具…",
@@ -231,20 +224,6 @@
     "The new chat will use your saved access code.",
     "新しい会話では保存済みのアクセスコードを使用します。",
     "새 대화에서는 저장된 접근 코드를 사용합니다."
-  ],
-  "访问码是你的 OpenAI API Key，将保存在当前浏览器。": [
-    "访问码是你的 OpenAI API Key，将保存在当前浏览器。",
-    "存取碼是你的 OpenAI API Key，將儲存在目前的瀏覽器。",
-    "Use your OpenAI API key as the access code. It is saved in this browser.",
-    "OpenAI API キーをアクセスコードとして入力してください。このブラウザーに保存されます。",
-    "OpenAI API 키를 접근 코드로 입력하세요. 이 브라우저에 저장됩니다."
-  ],
-  "服务端尚未设置访问码。": [
-    "服务端尚未设置访问码。",
-    "伺服器尚未設定存取碼。",
-    "No access code is configured on the server.",
-    "サーバーにアクセスコードが設定されていません。",
-    "서버에 접근 코드가 설정되지 않았습니다."
   ],
   "模型": ["模型", "模型", "Model", "モデル", "모델"],
   "会话类型": ["会话类型", "對話類型", "Chat type", "会話タイプ", "대화 유형"],

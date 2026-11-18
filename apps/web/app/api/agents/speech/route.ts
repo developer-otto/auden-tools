@@ -11,7 +11,7 @@ export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   const client = agentClient(request);
-  if (!client) return agentError(401);
+  if (client instanceof Response) return client;
   let input: string;
   try {
     input = new TextDecoder()

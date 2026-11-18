@@ -2,13 +2,18 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { POST } from "../app/api/agents/route.ts";
 
-test("only authorized, validated turns are sent to OpenAI without response storage", async (t) => {
+test("validated turns use the server key without response storage", async (t) => {
   const code = "test-access-code";
+  const serverKey = "test-chat-server-key";
   const originalModel = process.env.OPENAI_AGENTS_MODEL;
+  const originalKey = process.env.OPENAI_API_KEY;
+  process.env.OPENAI_API_KEY = serverKey;
   delete process.env.OPENAI_AGENTS_MODEL;
   t.after(() => {
     if (originalModel !== undefined)
       process.env.OPENAI_AGENTS_MODEL = originalModel;
+    if (originalKey === undefined) delete process.env.OPENAI_API_KEY;
+    else process.env.OPENAI_API_KEY = originalKey;
   });
   const upstream = t.mock.method(
     globalThis,
@@ -17,7 +22,7 @@ test("only authorized, validated turns are sent to OpenAI without response stora
       assert.equal(String(url), "https://api.openai.com/v1/responses");
       assert.equal(
         new Headers(options.headers).get("authorization"),
-        `Bearer ${code}`,
+        `Bearer ${serverKey}`,
       );
       const request = JSON.parse(String(options.body));
       assert.equal(request.store, false);

@@ -14,7 +14,7 @@ export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   const client = agentClient(request);
-  if (!client) return agentError(401);
+  if (client instanceof Response) return client;
   const format =
     request.headers.get("content-type")?.split(";")[0]?.toLowerCase() ?? "";
   const ext = Object.hasOwn(agentAudioExtensions, format)
