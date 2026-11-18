@@ -204,3 +204,54 @@ test("Agents restores, continues, and deletes local conversations", async ({ pag
   await picker.click();
   await expect(page.getByRole("option", { name: "First conversation" })).toHaveCount(0);
 });
+
+test("Agents renders Markdown from new and cached replies without active HTML", async ({
+  page,
+}) => {
+  const reply = [
+    "我可以帮你：",
+    "",
+    "- **解答问题**：解释概念",
+    "- **编程协助**：讲解实现思路",
+    "",
+    "```html",
+    "<script>example()</script>",
+    "```",
+    "",
+    "[参考资料](https://example.test/doc)",
+    "[无效链接](jAvAsCrIpT:example())",
+    "[数据链接](data:text/html,example)",
+    "![外部图片](https://example.test/pixel.png)",
+    "",
+    "<script>example()</script>",
+    '<button onclick="example()">无效按钮</button>',
+  ].join("\n");
+  await page.route("**/api/agents", (route) =>
+    route.fulfill({ json: { text: reply } }),
+  );
+  await page.goto("/tools/agents");
+  await page.getByRole("button", { name: "会话设置" }).click();
+  await page.getByLabel("访问码").fill("browser-test-code");
+  await page.getByRole("button", { name: "进入聊天" }).click();
+  await page.getByRole("textbox", { name: "输入消息" }).fill("**原始输入**");
+  await page.getByRole("button", { name: "发送消息" }).click();
+  const answer = page.locator("article[data-role=assistant] .agents-markdown");
+  await expect(answer.getByRole("listitem")).toHaveCount(2);
+  await page.reload();
+  await expect(answer.getByRole("listitem")).toHaveCount(2);
+  await expect(answer.locator("li strong").first()).toHaveText("解答问题");
+  await expect(answer.locator("pre code")).toHaveText(
+    "<script>example()</script>",
+  );
+  await expect(answer.getByRole("link", { name: "参考资料" })).toHaveAttribute(
+    "href",
+    "https://example.test/doc",
+  );
+  await expect(answer.getByRole("link")).toHaveCount(1);
+  await expect(answer.getByText("无效链接")).toBeVisible();
+  await expect(answer.getByText("数据链接")).toBeVisible();
+  await expect(answer.locator("script, [onclick], button, img")).toHaveCount(0);
+  await expect(
+    page.getByRole("log").getByText("**原始输入**", { exact: true }),
+  ).toBeVisible();
+});

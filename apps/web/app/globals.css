@@ -4589,8 +4589,50 @@ html:lang(en) .timeline-city {
   border-radius: 12px;
   padding: 8px 12px;
 }
-.agents-message strong { font-size: 11px; color: var(--secondary); }
+.agents-message > strong { font-size: 11px; color: var(--secondary); }
 .agents-message-text { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; }
+.agents-markdown { white-space: normal; }
+.agents-markdown > * + * { margin-block-start: 0.7em; }
+.agents-markdown :is(h1, h2, h3, h4, h5, h6) {
+  font-size: 1.2em;
+  line-height: 1.45;
+  letter-spacing: normal;
+}
+.agents-markdown :is(ul, ol) {
+  padding-inline-start: 1.5em;
+  margin-block-end: 0;
+}
+.agents-markdown li + li { margin-block-start: 0.2em; }
+.agents-markdown li > :is(ul, ol) { margin-block-start: 0.25em; }
+.agents-markdown blockquote {
+  margin-inline: 0;
+  margin-block-end: 0;
+  padding-inline-start: 0.8em;
+  border-inline-start: 3px solid var(--line);
+  color: var(--secondary);
+}
+.agents-markdown a {
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.agents-markdown pre {
+  max-width: 100%;
+  overflow-x: auto;
+  margin-block-end: 0;
+  padding: 0.75em;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+}
+.agents-markdown :not(pre) > code {
+  padding: 0.1em 0.3em;
+  border-radius: 4px;
+  background: var(--bg);
+}
+.agents-markdown-table { max-width: 100%; overflow-x: auto; }
+.agents-markdown table { border-collapse: collapse; }
+.agents-markdown :is(th, td) { padding: 0.35em 0.6em; border: 1px solid var(--line); }
 .agents-compose .field { width: 100%; height: auto; padding-block: 10px; resize: vertical; }
 .agents-compose-footer { justify-content: space-between; margin-top: 8px; }
 .agents-compose-footer small { flex: 1 1 220px; }

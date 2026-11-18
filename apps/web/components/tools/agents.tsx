@@ -12,6 +12,7 @@ import {
 } from "../../lib/agent-options";
 import type { AgentCitation } from "../../lib/agent-media";
 import { AgentDictation, AgentReadAloud } from "./agent-audio";
+import { AgentMarkdown } from "./agent-markdown";
 import { usePreference } from "../../lib/preferences";
 import { Icon } from "../icon";
 import { useApp } from "../providers";
@@ -154,32 +155,6 @@ function errorMessage(status: number) {
   return "暂时无法生成回复，请重试。";
 }
 
-function MessageText({ turn }: { turn: Turn }) {
-  if (!turn.citations?.length) return turn.content;
-  const chars = Array.from(turn.content);
-  const sorted = [...turn.citations].sort((a, b) => a.end - b.end);
-  return (
-    <>
-      {sorted.map((citation, index) => (
-        <span key={index}>
-          {chars.slice(sorted[index - 1]?.end ?? 0, citation.end).join("")}
-          <a
-            className="agents-citation"
-            href={citation.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={citation.title}
-            title={citation.title}
-          >
-            [{index + 1}]
-          </a>
-        </span>
-      ))}
-      {chars.slice(sorted.at(-1)?.end ?? 0).join("")}
-    </>
-  );
-}
-
 function AgentChat({
   access,
   settings: { model, type, effort, webSearch },
@@ -311,9 +286,11 @@ function AgentChat({
         {display.map((turn, index) => (
           <article className="agents-message" data-role={turn.role} key={index}>
             <strong>{turn.role === "user" ? t("你") : "Agents"}</strong>
-            <div className="agents-message-text">
-              <MessageText turn={turn} />
-            </div>
+            {turn.role === "assistant" ? (
+              <AgentMarkdown content={turn.content} citations={turn.citations} />
+            ) : (
+              <div className="agents-message-text">{turn.content}</div>
+            )}
             {turn.role === "assistant" ? (
               <div className="agents-message-actions">
                 <Button
