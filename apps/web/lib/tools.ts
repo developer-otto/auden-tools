@@ -6,6 +6,7 @@ export const toolIds = [
   "date",
   "currency",
   "markets",
+  "agents",
   "units",
   "text",
   "json",
@@ -24,6 +25,16 @@ export type Tool = {
   keywords: string;
 };
 export const tools: Tool[] = [
+  {
+    id: "agents",
+    name: "Agents",
+    desc: "用 AI 问答、总结、翻译和解释代码。",
+    category: "text",
+    label: "AI",
+    icon: "code",
+    color: "violet",
+    keywords: "agents AI OpenAI Codex 编程 总结 翻译 问答",
+  },
   {
     id: "markets",
     name: "全球行情",

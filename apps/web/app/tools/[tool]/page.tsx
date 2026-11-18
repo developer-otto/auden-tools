@@ -9,6 +9,7 @@ import { isConversionId } from "../../../lib/conversions";
 const FileTool = dynamic(() => import("../../../components/tools/files"));
 
 const screens = {
+  agents: dynamic(() => import("../../../components/tools/agents")),
   markets: dynamic(() => import("../../../components/tools/markets")),
   timestamp: dynamic(() => import("../../../components/tools/timestamp")),
   world: dynamic(() => import("../../../components/tools/world")),

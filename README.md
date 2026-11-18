@@ -1,8 +1,8 @@
 # Auden Tools
 
-基于 Next.js App Router 的日常工具平台，提供 15 个工具和简体中文、繁体中文、英语、日语、韩语。计算、文本和文件转换均在浏览器中完成；Next.js 仅提供页面和汇率获取/缓存接口。
+基于 Next.js App Router 的日常工具平台，提供 16 个工具和简体中文、繁体中文、英语、日语、韩语。计算、文本和文件转换均在浏览器中完成；Next.js 提供页面、汇率接口及可选的 Agents 接口。
 
-**无需数据库、云存储、转换服务器、API Key 或环境变量。** 文件不上传，转换结果仅保存在当前页面内存中。
+**核心工具无需数据库、云存储、转换服务器、API Key 或环境变量。** 文件不上传，转换结果仅保存在当前页面内存中。
 
 ## 后续功能的架构约束
 
@@ -75,3 +75,17 @@ GitHub 仓库已经连接 Vercel。推送 `main` 更新正式站，其他分支/
 ## 联系方式
 
 [auden12138@gmail.com](mailto:auden12138@gmail.com)
+
+## Agents（可选）
+
+访问 `/tools/agents`。在 `apps/web/.env.local` 中配置以下服务端变量后重启开发服务。部署时在托管平台配置相同变量，不要把真实值提交到 Git。
+
+```dotenv
+OPENAI_API_KEY=
+AUDEN_AGENTS_ACCESS_CODE=
+OPENAI_AGENTS_MODEL=gpt-6.1-terra
+```
+
+使用 OpenAI API 项目的密钥，并选择项目有权限使用的模型。访问码是独立的至少 24 字符的随机秘密（可用 `openssl rand -hex 24` 生成）；在页面里输入访问码，不输入 API Key。未配置时接口不会访问 OpenAI。请仅将访问码给受信任的用户。
+
+消息通过 Next.js 即时转发到 OpenAI Responses API（`store: false`）；本项目不保存聊天记录。服务商数据保留政策见 [OpenAI 数据控制](https://developers.openai.com/api/docs/guides/your-data)。
