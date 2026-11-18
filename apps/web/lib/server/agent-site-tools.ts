@@ -13,11 +13,23 @@ const unitCode = z.enum(
   unitKinds.flatMap((kind) => unitGroups[kind].units.map(({ id }) => id)),
 );
 
-export function createSiteTools(signal: AbortSignal) {
+export function createSiteTools(
+  signal: AbortSignal,
+  { discovery = false, programmatic = false } = {},
+) {
+  const options = {
+    deferLoading: discovery,
+    ...(programmatic
+      ? {
+          allowedCallers: ["direct", "programmatic"] as const,
+        }
+      : {}),
+  };
   // All conversions in one reply share the same published rate snapshot.
   let rates: ReturnType<typeof getLatestRates> | undefined;
   return [
     tool({
+      ...options,
       name: "date_add_days",
       description: "Add or subtract calendar days on the Gregorian calendar.",
       parameters: z.object({
@@ -36,6 +48,7 @@ export function createSiteTools(signal: AbortSignal) {
       },
     }),
     tool({
+      ...options,
       name: "date_days_between",
       description:
         "Calculate end minus start in Gregorian calendar days, excluding the start day.",
@@ -52,6 +65,7 @@ export function createSiteTools(signal: AbortSignal) {
       },
     }),
     tool({
+      ...options,
       name: "convert_time_zone",
       description:
         "Convert a local date and time between IANA time zones. Handles daylight saving gaps and overlaps.",
@@ -106,6 +120,7 @@ export function createSiteTools(signal: AbortSignal) {
       },
     }),
     tool({
+      ...options,
       name: "convert_unit",
       description:
         "Convert a measurement within length, weight, or temperature. Use c, f, and k for temperature.",
@@ -137,6 +152,7 @@ export function createSiteTools(signal: AbortSignal) {
       },
     }),
     tool({
+      ...options,
       name: "convert_currency",
       description:
         "Convert supported currencies using the latest published Frankfurter reference rates. These are dated reference rates.",

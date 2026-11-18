@@ -4631,6 +4631,14 @@ html:lang(en) .timeline-city {
   background: var(--bg);
 }
 .agents-markdown-table { max-width: 100%; overflow-x: auto; }
+.agents-generated-image { margin: 0 0 16px; }
+.agents-generated-image img {
+  display: block;
+  width: min(100%, 420px);
+  height: auto;
+  margin-block-end: 8px;
+  border-radius: 8px;
+}
 .agents-markdown table { border-collapse: collapse; }
 .agents-markdown :is(th, td) { padding: 0.35em 0.6em; border: 1px solid var(--line); }
 .agents-compose .field { width: 100%; height: auto; padding-block: 10px; resize: vertical; }

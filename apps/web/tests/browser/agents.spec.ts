@@ -158,7 +158,9 @@ test("chat settings apply to the next message without resetting the conversation
   });
 });
 
-test("Agents restores, continues, and deletes local conversations", async ({ page }) => {
+test("Agents restores, continues, and deletes local conversations", async ({
+  page,
+}) => {
   const requests: unknown[] = [];
   await page.route("**/api/agents", async (route) => {
     requests.push(route.request().postDataJSON());
@@ -202,7 +204,9 @@ test("Agents restores, continues, and deletes local conversations", async ({ pag
   await page.reload();
   await expect(page.getByText("Reply 2")).toBeVisible();
   await picker.click();
-  await expect(page.getByRole("option", { name: "First conversation" })).toHaveCount(0);
+  await expect(
+    page.getByRole("option", { name: "First conversation" }),
+  ).toHaveCount(0);
 });
 
 test("Agents renders Markdown from new and cached replies without active HTML", async ({
@@ -256,7 +260,9 @@ test("Agents renders Markdown from new and cached replies without active HTML", 
   ).toBeVisible();
 });
 
-test("auto routing restores the specialist reply and site tools setting", async ({ page }) => {
+test("auto routing restores the specialist reply and site tools setting", async ({
+  page,
+}) => {
   await page.route("**/api/agents", async (route) => {
     expect(route.request().postDataJSON()).toMatchObject({
       type: "auto",
@@ -286,4 +292,64 @@ test("auto routing restores the specialist reply and site tools setting", async 
   await expect(reply.getByText("ここに翻訳があります。")).toBeVisible();
   await page.getByRole("button", { name: "会话设置" }).click();
   await expect(tools).toHaveAttribute("aria-pressed", "true");
+});
+
+test("Agents sends a temporary attachment and renders the generated image without caching it", async ({
+  page,
+}) => {
+  const image =
+    "UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEAAUAmJaQAA3AA/v89WAAAAA==";
+  const file = Buffer.from("%PDF-1.7\n%Attachment for this reply");
+  await page.route("**/api/agents", (route) => {
+    expect(route.request().headers().accept).toBe("application/x-ndjson");
+    expect(route.request().postDataJSON()).toMatchObject({
+      advancedTools: ["image"],
+      attachment: {
+        mime: "application/pdf",
+        name: "notes.pdf",
+        data: file.toString("base64"),
+      },
+    });
+    const events = [
+      { type: "tool" },
+      { type: "delta", text: "图片已生成" },
+      { type: "done", reply: { text: "已生成图示。", image } },
+    ];
+    return route.fulfill({
+      contentType: "application/x-ndjson",
+      body: events.map((event) => JSON.stringify(event) + "\n").join(""),
+    });
+  });
+  await page.goto("/tools/agents");
+  await page.getByRole("button", { name: "会话设置" }).click();
+  const modal = page.getByRole("dialog", { name: "会话设置" });
+  await modal.getByLabel("访问码").fill("browser-test-code");
+  await modal.getByRole("button", { name: "图片生成" }).click();
+  await modal.getByRole("button", { name: "进入聊天" }).click();
+
+  await page.getByLabel("选择附件").setInputFiles({
+    name: "notes.pdf",
+    mimeType: "application/pdf",
+    buffer: file,
+  });
+  await expect(page.getByText("notes.pdf")).toBeVisible();
+  await page
+    .getByRole("textbox", { name: "输入消息" })
+    .fill("根据文件生成图示");
+  await page.getByRole("button", { name: "发送消息" }).click();
+  await expect(
+    page.getByRole("img", { name: "AI 生成的图片" }),
+  ).toHaveAttribute("src", /^blob:/);
+  await expect(page.getByRole("link", { name: "下载图片" })).toHaveAttribute(
+    "download",
+    "auden-image.webp",
+  );
+  const cached = await page.evaluate(() =>
+    localStorage.getItem("auden:v1:agents-chat-history"),
+  );
+  expect(cached).not.toContain(file.toString("base64"));
+  expect(cached).not.toContain(image);
+  await page.reload();
+  await expect(page.getByText("已生成图示。")).toBeVisible();
+  await expect(page.getByRole("img", { name: "AI 生成的图片" })).toHaveCount(0);
 });

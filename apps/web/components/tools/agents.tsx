@@ -1,8 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import {
+  advancedAgentTools,
   agentTypes,
+  canEnableAgentTool,
+  isAdvancedAgentTool,
   isAgentResponder,
   isAgentType,
   isReasoningEffort,
@@ -11,8 +15,17 @@ import {
   type ReasoningEffort,
   type AgentType,
   type AgentResponder,
+  type AdvancedAgentTool,
 } from "../../lib/agent-options";
 import type { AgentCitation } from "../../lib/agent-media";
+import {
+  agentAttachmentTypes,
+  encodeAgentAttachment,
+  isAgentAttachmentType,
+  maxAgentAttachmentBytes,
+  maxAgentRequestBytes,
+} from "../../lib/agent-attachments";
+import { agentStreamType, readAgentStream } from "../../lib/agent-stream";
 import { AgentDictation, AgentReadAloud } from "./agent-audio";
 import { AgentMarkdown } from "./agent-markdown";
 import { usePreference } from "../../lib/preferences";
@@ -44,13 +57,14 @@ type Settings = {
   effort?: ReasoningEffort;
   webSearch?: boolean;
   siteTools?: boolean;
+  advancedTools?: AdvancedAgentTool[];
 };
 const defaultSettings: Settings = { model: automaticModel, type: "chat" };
 const validateAccess = (value: unknown) =>
   typeof value === "string" ? value : "";
 function validateSettings(value: unknown): Settings {
   if (!value || typeof value !== "object") return defaultSettings;
-  const { model, type, effort, webSearch, siteTools } =
+  const { model, type, effort, webSearch, siteTools, advancedTools } =
     value as Partial<Settings>;
   return {
     model: typeof model === "string" ? model : automaticModel,
@@ -58,6 +72,9 @@ function validateSettings(value: unknown): Settings {
     effort: isReasoningEffort(effort) ? effort : undefined,
     webSearch: webSearch === true,
     siteTools: siteTools === true,
+    advancedTools: Array.isArray(advancedTools)
+      ? [...new Set(advancedTools.filter(isAdvancedAgentTool))]
+      : [],
   };
 }
 
@@ -154,12 +171,19 @@ async function agentRequest(access: string, body: object, signal: AbortSignal) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Accept: agentStreamType,
       "x-agents-access-code": access,
     },
     body: JSON.stringify(body),
     signal,
   });
 }
+
+const initialProgress = {
+  text: "",
+  tool: false,
+  responder: undefined as AgentResponder | undefined,
+};
 
 function errorMessage(status: number) {
   if (status === 401) return "访问码无效。";
@@ -170,8 +194,10 @@ function errorMessage(status: number) {
 
 function AgentChat({
   access,
-  settings: { model, type, effort, webSearch, siteTools },
+  settings: { model, type, effort, webSearch, siteTools, advancedTools },
   turns,
+  imageUrl,
+  onClearImage,
   onReply,
   onNewChat,
   onSettings,
@@ -180,28 +206,36 @@ function AgentChat({
   access: string;
   settings: Settings;
   turns: Turn[];
-  onReply: (user: Turn, assistant: Turn) => void;
+  imageUrl?: string;
+  onClearImage: () => void;
+  onReply: (user: Turn, assistant: Turn, image?: string) => void;
   onNewChat: () => void;
   onSettings: () => void;
   onForget: () => void;
 }) {
   const { t, copy } = useApp();
   const [prompt, setPrompt] = useState("");
+  const [attachment, setAttachment] = useState<File | null>(null);
   const [pending, setPending] = useState("");
+  const [progress, setProgress] = useState(initialProgress);
   const [error, setError] = useState("");
   const request = useRef<AbortController | null>(null);
   const log = useRef<HTMLDivElement>(null);
+  const followReply = useRef(true);
   const composer = useRef<HTMLTextAreaElement>(null);
+  const attachmentInput = useRef<HTMLInputElement>(null);
   useEffect(() => () => request.current?.abort(), []);
   useEffect(() => {
     const node = log.current;
-    if (node) node.scrollTop = node.scrollHeight;
-  }, [turns, pending]);
+    if (node && followReply.current) node.scrollTop = node.scrollHeight;
+  }, [turns, pending, progress]);
 
   function stop() {
     request.current?.abort();
     request.current = null;
     setPending("");
+    setProgress(initialProgress);
+    composer.current?.focus();
   }
 
   async function send() {
@@ -222,33 +256,63 @@ function AgentChat({
       effort,
       webSearch: webSearch || undefined,
       siteTools: siteTools || undefined,
+      advancedTools: advancedTools?.length ? advancedTools : undefined,
       turns: input,
     };
     const encoder = new TextEncoder();
     while (
       input.length > 1 &&
-      encoder.encode(JSON.stringify(body)).length > 32_768
+      encoder.encode(JSON.stringify(body)).length > maxAgentRequestBytes - 1024
     )
       input.splice(0, 2);
 
     const controller = new AbortController();
     request.current = controller;
+    followReply.current = true;
     setPending(content);
+    setProgress(initialProgress);
     setError("");
+    setAttachment(null);
     try {
-      const response = await agentRequest(access, body, controller.signal);
+      const file = attachment
+        ? await encodeAgentAttachment(attachment)
+        : undefined;
+      if (controller.signal.aborted) return;
+      const response = await agentRequest(
+        access,
+        { ...body, attachment: file },
+        controller.signal,
+      );
       if (controller.signal.aborted) return;
       if (!response.ok) {
         setError(errorMessage(response.status));
         return;
       }
-      const { text, citations, responder } = (await response.json()) as {
-        text: string;
-        citations?: AgentCitation[];
-        responder?: AgentResponder;
-      };
+      const result = await readAgentStream(response, (event) => {
+        if (controller.signal.aborted) return;
+        setProgress((current) => {
+          if (event.type === "specialist")
+            return { ...initialProgress, responder: event.responder };
+          if (event.type === "tool") return { ...current, tool: true };
+          return { ...current, tool: false, text: current.text + event.text };
+        });
+      });
       if (controller.signal.aborted) return;
-      onReply(user, { role: "assistant", content: text, citations, responder });
+      if (result.type === "error") {
+        setError(errorMessage(result.status));
+        return;
+      }
+      const { text, citations, responder, image } = result.reply;
+      onReply(
+        user,
+        {
+          role: "assistant",
+          content: text || t("图片已生成"),
+          citations,
+          responder,
+        },
+        image,
+      );
       setPrompt("");
     } catch {
       if (!controller.signal.aborted) setError(errorMessage(0));
@@ -256,6 +320,7 @@ function AgentChat({
       if (request.current === controller) {
         request.current = null;
         setPending("");
+        setProgress(initialProgress);
         composer.current?.focus();
       }
     }
@@ -272,6 +337,9 @@ function AgentChat({
           {t(agentTypes[type])}
           {webSearch ? ` · ${t("联网搜索")}` : null}
           {siteTools ? ` · ${t("站内工具")}` : null}
+          {advancedTools
+            ?.map((tool) => ` · ${t(advancedAgentTools[tool])}`)
+            .join("")}
           {effort
             ? ` · ${t("Reasoning")}：${t(reasoningLabels[effort])}`
             : null}
@@ -291,6 +359,11 @@ function AgentChat({
         role="log"
         aria-label={t("当前对话")}
         ref={log}
+        onScroll={(event) => {
+          const node = event.currentTarget;
+          followReply.current =
+            node.scrollHeight - node.scrollTop - node.clientHeight < 64;
+        }}
       >
         {!display.length ? (
           <div className="agents-welcome">
@@ -329,10 +402,43 @@ function AgentChat({
             ) : null}
           </article>
         ))}
+        {imageUrl ? (
+          <figure className="agents-generated-image">
+            <Image
+              src={imageUrl}
+              alt={t("AI 生成的图片")}
+              width={1024}
+              height={1024}
+              unoptimized
+            />
+            <figcaption className="agents-message-actions">
+              <Button asChild className="button small">
+                <a href={imageUrl} download="auden-image.webp">
+                  {t("下载图片")}
+                </a>
+              </Button>
+              <Button className="text-btn" onClick={onClearImage}>
+                {t("移除图片")}
+              </Button>
+            </figcaption>
+          </figure>
+        ) : null}
         {pending ? (
-          <p className="muted" role="status">
-            {t("正在生成回复…")}
-          </p>
+          <>
+            {progress.text ? (
+              <article className="agents-message" aria-live="off">
+                <strong>
+                  {progress.responder
+                    ? t(agentTypes[progress.responder])
+                    : "Agents"}
+                </strong>
+                <div className="agents-message-text">{progress.text}</div>
+              </article>
+            ) : null}
+            <p className="muted" role="status">
+              {t(progress.tool ? "正在使用工具…" : "正在生成回复…")}
+            </p>
+          </>
         ) : null}
       </div>
       <form
@@ -371,7 +477,44 @@ function AgentChat({
             {t(error)}
           </p>
         ) : null}
+        <input
+          ref={attachmentInput}
+          type="file"
+          hidden
+          aria-label={t("选择附件")}
+          accept={agentAttachmentTypes.join(",")}
+          onChange={(event) => {
+            const file = event.currentTarget.files?.[0];
+            event.currentTarget.value = "";
+            if (!file) return;
+            if (
+              !isAgentAttachmentType(file.type) ||
+              !file.size ||
+              file.size > maxAgentAttachmentBytes
+            ) {
+              setError("请选择 2 MB 以内的 PDF、PNG、JPEG 或 WebP 文件。");
+              return;
+            }
+            setError("");
+            setAttachment(file);
+          }}
+        />
+        {attachment ? (
+          <div className="agents-message-actions">
+            <span>{attachment.name}</span>
+            <Button className="text-btn" onClick={() => setAttachment(null)}>
+              {t("移除附件")}
+            </Button>
+          </div>
+        ) : null}
         <div className="agents-compose-footer">
+          <Button
+            className="button small"
+            disabled={Boolean(pending)}
+            onClick={() => attachmentInput.current?.click()}
+          >
+            {t("添加附件")}
+          </Button>
           <AgentDictation
             access={access}
             disabled={Boolean(pending)}
@@ -427,6 +570,11 @@ function AgentSetup({
   const [effort, setEffort] = useState(settings.effort);
   const [webSearch, setWebSearch] = useState(Boolean(settings.webSearch));
   const [siteTools, setSiteTools] = useState(Boolean(settings.siteTools));
+  const [toolChoices, setToolChoices] = useState(settings.advancedTools ?? []);
+  const selectedModel = model === automaticModel ? defaultModel : model;
+  const enabledTools = toolChoices.filter((tool) =>
+    canEnableAgentTool(tool, selectedModel, siteTools),
+  );
   const efforts = reasoningEfforts(
     model === automaticModel ? defaultModel : model,
   );
@@ -447,7 +595,7 @@ function AgentSetup({
               ? "设置从下一条消息生效，保留当前对话。"
               : access
                 ? "新对话会沿用已保存的访问码。"
-                : "访问码是你的 OpenAI API Key，将保存在当前浏览器。",
+                : "输入你的 OpenAI API Key 或站点访问码，凭据会保存在当前浏览器。",
           )}
         </DialogDescription>
         <form
@@ -461,13 +609,14 @@ function AgentSetup({
                 effort: activeEffort,
                 webSearch,
                 siteTools,
+                advancedTools: enabledTools,
               });
           }}
         >
           {!access ? (
             <div>
               <label className="input-label" htmlFor="agents-access">
-                {t("访问码")} · OpenAI API Key
+                {t("访问码")} / OpenAI API Key
               </label>
               <Input
                 className="field"
@@ -554,6 +703,37 @@ function AgentSetup({
             >
               {t("站内工具")}
             </Button>
+            {Object.keys(advancedAgentTools)
+              .filter(isAdvancedAgentTool)
+              .map((tool) => {
+                const enabled = canEnableAgentTool(
+                  tool,
+                  selectedModel,
+                  siteTools,
+                );
+                return (
+                  <Button
+                    key={tool}
+                    className="button small"
+                    disabled={!enabled}
+                    title={
+                      enabled
+                        ? undefined
+                        : t("需要开启站内工具并选择支持的模型。")
+                    }
+                    aria-pressed={enabledTools.includes(tool)}
+                    onClick={() =>
+                      setToolChoices((current) =>
+                        current.includes(tool)
+                          ? current.filter((item) => item !== tool)
+                          : [...current, tool],
+                      )
+                    }
+                  >
+                    {t(advancedAgentTools[tool])}
+                  </Button>
+                );
+              })}
           </div>
           <div className="agents-toolbar">
             <Button className="button" onClick={onCancel}>
@@ -592,6 +772,16 @@ export default function AgentsTool({
     validateSettings,
   );
   const [setup, setSetup] = useState<"new" | "edit" | null>(null);
+  const [image, setImage] = useState<{ chatId: string; url: string } | null>(
+    null,
+  );
+  const imageObjectUrl = useRef<string | null>(null);
+  useEffect(
+    () => () => {
+      if (imageObjectUrl.current) URL.revokeObjectURL(imageObjectUrl.current);
+    },
+    [],
+  );
   const [history, setHistory] = usePreference(
     "agents-chat-history",
     emptyHistory,
@@ -602,12 +792,14 @@ export default function AgentsTool({
     (setup === "new" ? savedSettings : active?.settings) ?? savedSettings;
   const normalizeSettings = (value: Settings): Settings => {
     const model = models.includes(value.model) ? value.model : automaticModel;
-    const supported = reasoningEfforts(
-      model === automaticModel ? defaultModel : model,
-    );
+    const selectedModel = model === automaticModel ? defaultModel : model;
+    const supported = reasoningEfforts(selectedModel);
     return {
       ...value,
       model,
+      advancedTools: value.advancedTools?.filter((tool) =>
+        canEnableAgentTool(tool, selectedModel, value.siteTools === true),
+      ),
       effort:
         value.effort && supported.includes(value.effort)
           ? value.effort
@@ -617,16 +809,45 @@ export default function AgentsTool({
   const settings = normalizeSettings(base);
   const chatSettings = normalizeSettings(active?.settings ?? savedSettings);
 
+  function clearImage() {
+    if (!imageObjectUrl.current) return;
+    URL.revokeObjectURL(imageObjectUrl.current);
+    imageObjectUrl.current = null;
+    setImage(null);
+  }
+
   function deleteChat() {
     if (!active || !window.confirm(t("删除这条本地会话？"))) return;
+    clearImage();
     setHistory((current) => {
       const chats = current.chats.filter((chat) => chat.id !== active.id);
       return { chats, selected: chats[0]?.id ?? "" };
     });
   }
 
-  function saveConversation(user: Turn, assistant: Turn) {
+  function saveConversation(
+    user: Turn,
+    assistant: Turn,
+    generatedImage?: string,
+  ) {
     const id = active?.id ?? crypto.randomUUID();
+    if (
+      generatedImage &&
+      generatedImage.length <= Math.ceil(maxAgentAttachmentBytes / 3) * 4
+    ) {
+      try {
+        const data = Uint8Array.from(atob(generatedImage), (character) =>
+          character.charCodeAt(0),
+        );
+        const blob = new Blob([data], { type: "image/webp" });
+        clearImage();
+        const url = URL.createObjectURL(blob);
+        imageObjectUrl.current = url;
+        setImage({ chatId: id, url });
+      } catch {
+        // The text reply remains available if an image was not delivered.
+      }
+    }
     setHistory((current) => {
       const existing = current.chats.find((chat) => chat.id === id);
       if (active && !existing) return current;
@@ -658,6 +879,7 @@ export default function AgentsTool({
             aria-label={t("本机会话")}
             value={active.id}
             onValueChange={(id) => {
+              if (id !== active.id) clearImage();
               setHistory((current) => ({ ...current, selected: id }));
             }}
           >
@@ -679,10 +901,15 @@ export default function AgentsTool({
           access={access}
           settings={chatSettings}
           turns={active?.turns ?? []}
+          imageUrl={
+            image && image.chatId === active?.id ? image.url : undefined
+          }
+          onClearImage={clearImage}
           onReply={saveConversation}
           onNewChat={() => setSetup("new")}
           onSettings={() => setSetup("edit")}
           onForget={() => {
+            clearImage();
             setAccess("");
             setSetup("new");
           }}
@@ -706,6 +933,7 @@ export default function AgentsTool({
             if (code !== access) setAccess(code);
             setSettings(next);
             if (setup === "new" && (access || !active)) {
+              clearImage();
               const id = crypto.randomUUID();
               setHistory((current) => ({
                 selected: id,

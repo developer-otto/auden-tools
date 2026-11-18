@@ -78,10 +78,12 @@ GitHub 仓库已经连接 Vercel。推送 `main` 更新正式站，其他分支/
 
 ## Agents（可选）
 
-访问 `/tools/agents`，在「会话设置」弹窗输入你自己的 OpenAI API Key（访问码）。无需配置服务端密钥或独立访问码。密钥和模型偏好只保存在当前浏览器的 localStorage，可通过「清除访问码」移除；请勿在共享设备保存密钥。
+访问 `/tools/agents`，在「会话设置」输入自己的 OpenAI API Key。若部署者提供站点访问码，也可用它进入聊天。站点共用密钥需要同时配置服务端的 `OPENAI_API_KEY` 和 `AUDEN_AGENTS_ACCESS_CODE`，请求必须匹配站点访问码才会使用共用密钥。浏览器保存的凭据可通过「清除访问码」移除。
 
-发送消息时，Next.js 使用用户提供的密钥即时调用 OpenAI Responses API（`store: false`），应用服务端不保存聊天记录。参照 [Agents Quickstart](https://developers.openai.com/api/docs/guides/agents/quickstart) 的应用管理历史方式，已完成的消息和会话设置仅保存在当前浏览器，刷新后可从「本机会话」切换或删除。最多保留最近 8 个会话，每个会话保留最近 24 条消息；续聊时只发送近期上下文。服务商数据保留政策见 [OpenAI 数据控制](https://developers.openai.com/api/docs/guides/your-data)。
+聊天用 OpenAI Agents SDK 执行并流式返回文字及工具状态。取消会停止本次请求。Responses API 使用 `store: false`，SDK 追踪关闭。已完成的消息文字和会话设置仅保存在当前浏览器，最多保留 8 个会话，每个会话最近 24 条消息。续聊时会发送近期上下文。服务商数据保留政策见 [OpenAI 数据控制](https://developers.openai.com/api/docs/guides/your-data)。
 
 模型、会话类型和 Reasoning 推理强度默认沿用上次设置，可在「新对话」或聊天窗口的「会话设置」弹窗中调整。修改当前会话设置不会清空对话。默认模型与 [OpenAI Quickstart](https://developers.openai.com/api/docs/quickstart) 一致，为 `gpt-6.2-astra`。部署时可选用 `OPENAI_AGENTS_MODEL` 覆盖默认模型、用 `OPENAI_AGENTS_MODELS` 指定可选模型（逗号分隔）。
 
-「新对话」可开启联网搜索，回答会显示可点击的来源。麦克风录音最多 60 秒，由 OpenAI 转成可编辑的输入文字；点击「AI 朗读」可生成回复音频。录音与音频不写入存储。
+「自动分流」会把消息交给编程、写作、总结或翻译助手。会话设置可单独开启联网搜索、站内计算、图片生成和只读的 OpenAI 文档 MCP。开启站内工具后，支持的模型还可按需加载工具或批量调用日期、时区、单位和汇率函数。
+
+每条消息可附加一个 2 MB 以内的 PDF、PNG、JPEG 或 WebP 文件，用于本次分析或图片编辑。附件随请求发给 OpenAI，应用只缓存问答文字。下载生成的图片后可保存在设备上。麦克风录音最多 60 秒，转成可编辑的文字，也可以用「AI 朗读」播放回复。

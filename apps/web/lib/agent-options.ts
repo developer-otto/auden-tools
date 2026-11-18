@@ -17,6 +17,38 @@ export function isAgentResponder(value: unknown): value is AgentResponder {
   return isAgentType(value) && value !== "auto";
 }
 
+export const advancedAgentTools = {
+  image: "图片生成",
+  docs: "OpenAI 文档检索",
+  discovery: "按需加载工具",
+  programmatic: "批量工具调用",
+} as const;
+export type AdvancedAgentTool = keyof typeof advancedAgentTools;
+
+export function isAdvancedAgentTool(
+  value: unknown,
+): value is AdvancedAgentTool {
+  return typeof value === "string" && Object.hasOwn(advancedAgentTools, value);
+}
+
+export function canEnableAgentTool(
+  tool: AdvancedAgentTool,
+  model: string,
+  siteTools: boolean,
+) {
+  if (tool === "image" || tool === "docs") return true;
+  if (!siteTools) return false;
+  const [major, minor] =
+    model
+      .match(/^gpt-(\d+)(?:\.(\d+))?/)
+      ?.slice(1)
+      .map(Number) ?? [];
+  if (major === undefined) return false;
+  return tool === "discovery"
+    ? major > 5 || (major === 5 && (minor ?? 0) >= 4)
+    : major > 6 || (major === 6 && (minor ?? 0) >= 2);
+}
+
 export const builtInAgentModels = [
   "gpt-6.2-astra",
   "gpt-6.2-sol",

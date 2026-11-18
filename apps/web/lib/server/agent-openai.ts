@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import OpenAI from "openai";
 
 export const noStore = { "Cache-Control": "no-store" };
@@ -7,25 +8,34 @@ export function agentError(status: number) {
 }
 
 export function agentClient(request: Request) {
-  const apiKey = process.env.OPENAI_API_KEY?.trim();
-  if (!apiKey) return null;
-  return new OpenAI({
-    apiKey,
-  });
+  const access = request.headers.get("x-agents-access-code")?.trim();
+  if (!access || access.length > 1024) return null;
+  const sharedCode = process.env.AUDEN_AGENTS_ACCESS_CODE?.trim();
+  const serverKey = process.env.OPENAI_API_KEY?.trim();
+  const provided = Buffer.from(access);
+  const expected = Buffer.from(sharedCode ?? "");
+  const isShared =
+    serverKey &&
+    provided.length === expected.length &&
+    timingSafeEqual(provided, expected);
+  return new OpenAI({ apiKey: isShared ? serverKey : access });
 }
 
-export function upstreamAgentError(error: unknown) {
+export function upstreamAgentStatus(error: unknown) {
   if (error instanceof OpenAI.APIError) {
-    if (error.status === 401 || error.status === 429)
-      return agentError(error.status);
+    if (error.status === 401 || error.status === 429) return error.status;
     if (
       error.status === 403 ||
       error.status === 404 ||
       error.code === "model_not_found"
     )
-      return agentError(424);
+      return 424;
   }
-  return agentError(502);
+  return 502;
+}
+
+export function upstreamAgentError(error: unknown) {
+  return agentError(upstreamAgentStatus(error));
 }
 
 export async function readAgentBytes(request: Request, limit: number) {

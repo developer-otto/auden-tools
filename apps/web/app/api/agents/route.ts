@@ -8,11 +8,20 @@ import {
 } from "../../../lib/server/agent-openai.ts";
 import { collectAgentCitations } from "../../../lib/server/agent-citations.ts";
 import {
+  maxAttachedAgentRequestBytes,
+  maxAgentRequestBytes,
+} from "../../../lib/agent-attachments.ts";
+import { readAgentAttachment } from "../../../lib/server/agent-attachments.ts";
+import { agentStreamType } from "../../../lib/agent-stream.ts";
+import { streamAgentReply } from "../../../lib/server/agent-stream-response.ts";
+import {
   agentInstructions,
   runAgentConversation,
   type AgentTurn,
 } from "../../../lib/server/agent-specialists.ts";
 import {
+  canEnableAgentTool,
+  isAdvancedAgentTool,
   isAgentType,
   isReasoningEffort,
   reasoningEfforts,
@@ -36,10 +45,11 @@ export async function POST(request: Request) {
   if (!client) return fail(401);
 
   let body: unknown;
+  let size: number;
   try {
-    body = JSON.parse(
-      new TextDecoder().decode(await readAgentBytes(request, 32_768)),
-    );
+    const bytes = await readAgentBytes(request, maxAttachedAgentRequestBytes);
+    size = bytes.byteLength;
+    body = JSON.parse(new TextDecoder().decode(bytes));
   } catch {
     return fail(400);
   }
@@ -52,6 +62,8 @@ export async function POST(request: Request) {
     effort,
     webSearch,
     siteTools,
+    advancedTools = [],
+    attachment: incomingAttachment,
     turns: input,
   } = body as Record<string, unknown>;
   const { defaultModel, models } = getAgentConfig();
@@ -61,11 +73,30 @@ export async function POST(request: Request) {
       (typeof model !== "string" || !models.includes(model))) ||
     !isAgentType(type) ||
     (webSearch !== undefined && typeof webSearch !== "boolean") ||
-    (siteTools !== undefined && typeof siteTools !== "boolean")
+    (siteTools !== undefined && typeof siteTools !== "boolean") ||
+    !Array.isArray(advancedTools) ||
+    advancedTools.length > 4 ||
+    !advancedTools.every(isAdvancedAgentTool) ||
+    new Set(advancedTools).size !== advancedTools.length
   )
     return fail(400);
 
   const selectedModel = model ?? defaultModel;
+  if (
+    !advancedTools.every((tool) =>
+      canEnableAgentTool(tool, selectedModel, siteTools === true),
+    )
+  )
+    return fail(424);
+  const attachment =
+    incomingAttachment === undefined
+      ? undefined
+      : readAgentAttachment(incomingAttachment);
+  if (
+    attachment === null ||
+    size - (attachment?.data.length ?? 0) > maxAgentRequestBytes
+  )
+    return fail(400);
   if (
     effort !== undefined &&
     (!isReasoningEffort(effort) ||
@@ -86,19 +117,39 @@ export async function POST(request: Request) {
     return fail(400);
 
   try {
-    const turns = input.map(({ role, content }: AgentTurn) => ({ role, content }));
-    if (type === "auto" || siteTools === true) {
+    const turns = input.map(({ role, content }: AgentTurn) => ({
+      role,
+      content,
+    }));
+    const conversation = {
+      client,
+      model: selectedModel,
+      type,
+      effort,
+      webSearch: webSearch === true,
+      siteTools: siteTools === true,
+      advancedTools,
+      attachment,
+      turns,
+    };
+    if (request.headers.get("Accept") === agentStreamType) {
+      return streamAgentReply(request.signal, (signal, emit) =>
+        runAgentConversation({ ...conversation, signal, emit }),
+      );
+    }
+    if (
+      type === "auto" ||
+      siteTools === true ||
+      advancedTools.length ||
+      attachment
+    ) {
       const reply = await runAgentConversation({
-        client,
-        model: selectedModel,
-        type,
-        effort,
-        webSearch: webSearch === true,
-        siteTools: siteTools === true,
-        turns,
+        ...conversation,
         signal: request.signal,
       });
-      return reply.text ? Response.json(reply, { headers }) : fail(502);
+      return reply.text || reply.image
+        ? Response.json(reply, { headers })
+        : fail(502);
     }
 
     const response = await client.responses.create(
