@@ -4,12 +4,14 @@ import { notFound } from "next/navigation";
 import dynamic from "next/dynamic";
 import { isLocale, translate } from "../../../lib/i18n";
 import { getTool, isToolId } from "../../../lib/tools";
+import { getAgentConfig } from "../../../lib/server/agent-config";
 import { isConversionId } from "../../../lib/conversions";
 
 const FileTool = dynamic(() => import("../../../components/tools/files"));
 
+const AgentsTool = dynamic(() => import("../../../components/tools/agents"));
+
 const screens = {
-  agents: dynamic(() => import("../../../components/tools/agents")),
   markets: dynamic(() => import("../../../components/tools/markets")),
   timestamp: dynamic(() => import("../../../components/tools/timestamp")),
   world: dynamic(() => import("../../../components/tools/world")),
@@ -34,6 +36,7 @@ export default async function ToolPage({ params }: Props) {
   const { tool } = await params;
   if (!isToolId(tool)) notFound();
   if (isConversionId(tool)) return <FileTool key={tool} operation={tool} />;
+  if (tool === "agents") return <AgentsTool {...getAgentConfig()} />;
   const Screen = screens[tool];
   return <Screen />;
 }

@@ -78,14 +78,10 @@ GitHub 仓库已经连接 Vercel。推送 `main` 更新正式站，其他分支/
 
 ## Agents（可选）
 
-访问 `/tools/agents`。在 `apps/web/.env.local` 中配置以下服务端变量后重启开发服务。部署时在托管平台配置相同变量，不要把真实值提交到 Git。
+访问 `/tools/agents`，在「会话设置」弹窗输入你自己的 OpenAI API Key（访问码）。无需配置服务端密钥或独立访问码。密钥和模型偏好只保存在当前浏览器的 localStorage，可通过「清除访问码」移除；请勿在共享设备保存密钥。
 
-```dotenv
-OPENAI_API_KEY=
-AUDEN_AGENTS_ACCESS_CODE=
-OPENAI_AGENTS_MODEL=gpt-6.1-terra
-```
+发送消息时，Next.js 使用用户提供的密钥即时调用 OpenAI Responses API（`store: false`），应用服务端不保存聊天记录。参照 [Agents Quickstart](https://developers.openai.com/api/docs/guides/agents/quickstart) 的应用管理历史方式，已完成的消息和会话设置仅保存在当前浏览器，刷新后可从「本机会话」切换或删除。最多保留最近 8 个会话，每个会话保留最近 24 条消息；续聊时只发送近期上下文。服务商数据保留政策见 [OpenAI 数据控制](https://developers.openai.com/api/docs/guides/your-data)。
 
-使用 OpenAI API 项目的密钥，并选择项目有权限使用的模型。访问码是独立的至少 24 字符的随机秘密（可用 `openssl rand -hex 24` 生成）；在页面里输入访问码，不输入 API Key。未配置时接口不会访问 OpenAI。请仅将访问码给受信任的用户。
+模型、会话类型和 Reasoning 推理强度默认沿用上次设置，可在「新对话」或聊天窗口的「会话设置」弹窗中调整。修改当前会话设置不会清空对话。默认模型与 [OpenAI Quickstart](https://developers.openai.com/api/docs/quickstart) 一致，为 `gpt-6.2-astra`。部署时可选用 `OPENAI_AGENTS_MODEL` 覆盖默认模型、用 `OPENAI_AGENTS_MODELS` 指定可选模型（逗号分隔）。
 
-消息通过 Next.js 即时转发到 OpenAI Responses API（`store: false`）；本项目不保存聊天记录。服务商数据保留政策见 [OpenAI 数据控制](https://developers.openai.com/api/docs/guides/your-data)。
+「新对话」可开启联网搜索，回答会显示可点击的来源。麦克风录音最多 60 秒，由 OpenAI 转成可编辑的输入文字；点击「AI 朗读」可生成回复音频。录音与音频不写入存储。

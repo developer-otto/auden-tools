@@ -1,35 +1,32 @@
-import { timingSafeEqual } from "node:crypto";
-import OpenAI from "openai";
+import { getAgentConfig } from "../../../lib/server/agent-config.ts";
+import {
+  agentClient,
+  agentError as fail,
+  noStore as headers,
+  readAgentBytes,
+  upstreamAgentError,
+} from "../../../lib/server/agent-openai.ts";
+import type { AgentCitation } from "../../../lib/agent-media.ts";
+import {
+  isAgentType,
+  isReasoningEffort,
+  reasoningEfforts,
+  type AgentType,
+} from "../../../lib/agent-options.ts";
 
 export const runtime = "nodejs";
 
-const headers = { "Cache-Control": "no-store" };
-const fail = (status: number) =>
-  Response.json({ error: true }, { status, headers });
-const maxBytes = 32_768;
-
-async function readBody(request: Request): Promise<unknown> {
-  const reader = request.body?.getReader();
-  if (!reader) throw new Error();
-  const decoder = new TextDecoder();
-  let length = 0;
-  let body = "";
-  try {
-    for (;;) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      length += value.byteLength;
-      if (length > maxBytes) {
-        await reader.cancel();
-        throw new Error();
-      }
-      body += decoder.decode(value, { stream: true });
-    }
-    return JSON.parse(body + decoder.decode());
-  } finally {
-    reader.releaseLock();
-  }
-}
+const typeInstructions: Record<AgentType, string> = {
+  chat: "Answer questions directly and clearly.",
+  coding:
+    "Explain code, diagnose issues, and propose concrete fixes or patches for the user to review.",
+  writing:
+    "Write or polish the requested text while retaining the intended tone and meaning.",
+  summary:
+    "Summarize the supplied material, separating key points and action items where useful. Do not invent missing details.",
+  translation:
+    "Translate the supplied text, preserving its meaning, tone, and formatting. Ask for a target language if it is unclear.",
+};
 
 type Turn = { role: "user" | "assistant"; content: string };
 
@@ -45,21 +42,45 @@ function isTurn(value: unknown): value is Turn {
 }
 
 export async function POST(request: Request) {
-  const key = process.env.OPENAI_API_KEY?.trim();
-  const access = process.env.AUDEN_AGENTS_ACCESS_CODE;
-  if (!key || !access || access.length < 24) return fail(503);
+  const client = agentClient(request);
+  if (!client) return fail(401);
 
-  const given = Buffer.from(request.headers.get("x-agents-access-code") ?? "");
-  const expected = Buffer.from(access);
-  if (given.length !== expected.length || !timingSafeEqual(given, expected))
-    return fail(401);
-
-  let input: unknown;
+  let body: unknown;
   try {
-    input = await readBody(request);
+    body = JSON.parse(
+      new TextDecoder().decode(await readAgentBytes(request, 32_768)),
+    );
   } catch {
     return fail(400);
   }
+  if (!body || typeof body !== "object" || Array.isArray(body))
+    return fail(400);
+  const {
+    action,
+    model,
+    type,
+    effort,
+    webSearch,
+    turns: input,
+  } = body as Record<string, unknown>;
+  const { defaultModel, models } = getAgentConfig();
+  if (
+    action !== "chat" ||
+    (model !== undefined &&
+      (typeof model !== "string" || !models.includes(model))) ||
+    !isAgentType(type) ||
+    (webSearch !== undefined && typeof webSearch !== "boolean")
+  )
+    return fail(400);
+
+  const selectedModel = model ?? defaultModel;
+  if (
+    effort !== undefined &&
+    (!isReasoningEffort(effort) ||
+      !reasoningEfforts(selectedModel).includes(effort))
+  )
+    return fail(400);
+
   if (
     !Array.isArray(input) ||
     !input.length ||
@@ -73,31 +94,63 @@ export async function POST(request: Request) {
     return fail(400);
 
   try {
-    const client = new OpenAI({ apiKey: key, maxRetries: 0, timeout: 45_000 });
     const response = await client.responses.create(
       {
-        model: process.env.OPENAI_AGENTS_MODEL?.trim() || "gpt-6.1-terra",
-        instructions:
-          "You are the Auden Tools assistant. Answer in the user's language. Help with questions, summaries, translations, and code explanations. You cannot access files, execute changes, or look up live information; do not claim otherwise.",
+        model: selectedModel,
+        ...(effort !== undefined ? { reasoning: { effort } } : {}),
+        ...(webSearch ? { tools: [{ type: "web_search" as const }] } : {}),
+        instructions: `You are the Auden Tools assistant. Use the user's language unless another is requested. You cannot access files or execute changes. ${webSearch ? "Use web search when current facts or sources are needed." : "You cannot look up live information."} ${typeInstructions[type]}`,
         input: input.map(({ role, content }: Turn) => ({ role, content })),
         store: false,
-        max_output_tokens: 2048,
       },
       { signal: request.signal },
     );
-    const text = response.output
-      .flatMap((item) =>
-        item.type === "message"
-          ? item.content.map((part) =>
-              part.type === "output_text" ? part.text : part.refusal,
+
+    const text =
+      response.output_text ||
+      response.output
+        .flatMap((item) =>
+          item.type === "message"
+            ? item.content.flatMap((part) =>
+                part.type === "refusal" ? [part.refusal] : [],
+              )
+            : [],
+        )
+        .join("\n");
+    if (!text) return fail(502);
+    const citations: AgentCitation[] = [];
+    let offset = 0;
+    if (webSearch) {
+      for (const item of response.output) {
+        if (item.type !== "message") continue;
+        for (const part of item.content) {
+          if (part.type !== "output_text") continue;
+          const length = Array.from(part.text).length;
+          for (const citation of part.annotations ?? []) {
+            if (citation.type !== "url_citation") continue;
+            const url = URL.parse(citation.url);
+            if (!url || !["https:", "http:"].includes(url.protocol)) continue;
+            if (
+              !Number.isInteger(citation.end_index) ||
+              citation.end_index < 0 ||
+              citation.end_index > length
             )
-          : [],
-      )
-      .join("\n");
-    return text ? Response.json({ text }, { headers }) : fail(502);
-  } catch (error) {
-    return fail(
-      error instanceof OpenAI.APIError && error.status === 429 ? 429 : 502,
+              continue;
+            citations.push({
+              end: offset + citation.end_index,
+              url: url.href,
+              title: citation.title || url.hostname,
+            });
+          }
+          offset += length;
+        }
+      }
+    }
+    return Response.json(
+      { text, ...(citations.length ? { citations } : {}) },
+      { headers },
     );
+  } catch (error) {
+    return upstreamAgentError(error);
   }
 }
