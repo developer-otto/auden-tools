@@ -1,22 +1,27 @@
-import { currencies } from "../catalog";
+import { currencies } from "../catalog.ts";
 import {
   isCurrencyCode,
   makeSnapshot,
   parseRateRows,
   type RateHistory,
-} from "../rates";
+} from "../rates.ts";
 
 const API = "https://api.frankfurter.dev/v2/rates";
-async function requestRates(params: URLSearchParams, base: string) {
+async function requestRates(
+  params: URLSearchParams,
+  base: string,
+  signal?: AbortSignal,
+) {
+  const timeout = AbortSignal.timeout(8000);
   const response = await fetch(`${API}?${params}`, {
     headers: { Accept: "application/json" },
     next: { revalidate: 3600 },
-    signal: AbortSignal.timeout(8000),
+    signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
   });
   if (!response.ok) throw new Error("Rate provider unavailable");
   return parseRateRows(await response.text(), base);
 }
-export async function getLatestRates() {
+export async function getLatestRates(signal?: AbortSignal) {
   const rows = await requestRates(
     new URLSearchParams({
       base: "CNY",
@@ -26,6 +31,7 @@ export async function getLatestRates() {
         .join(","),
     }),
     "CNY",
+    signal,
   );
   return makeSnapshot(rows, new Date().toISOString());
 }

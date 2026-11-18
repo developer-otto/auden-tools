@@ -1,14 +1,20 @@
 export const agentTypes = {
   chat: "通用对话",
+  auto: "自动分流",
   coding: "编程助手",
   writing: "写作与润色",
   summary: "总结与提炼",
   translation: "翻译",
 } as const;
 export type AgentType = keyof typeof agentTypes;
+export type AgentResponder = Exclude<AgentType, "auto">;
 
 export function isAgentType(value: unknown): value is AgentType {
   return typeof value === "string" && Object.hasOwn(agentTypes, value);
+}
+
+export function isAgentResponder(value: unknown): value is AgentResponder {
+  return isAgentType(value) && value !== "auto";
 }
 
 export const builtInAgentModels = [

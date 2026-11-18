@@ -3,12 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import {
   agentTypes,
+  isAgentResponder,
   isAgentType,
   isReasoningEffort,
   reasoningEfforts,
   reasoningLabels,
   type ReasoningEffort,
   type AgentType,
+  type AgentResponder,
 } from "../../lib/agent-options";
 import type { AgentCitation } from "../../lib/agent-media";
 import { AgentDictation, AgentReadAloud } from "./agent-audio";
@@ -33,6 +35,7 @@ type Turn = {
   role: "user" | "assistant";
   content: string;
   citations?: AgentCitation[];
+  responder?: AgentResponder;
 };
 const automaticModel = "automatic";
 type Settings = {
@@ -40,18 +43,21 @@ type Settings = {
   type: AgentType;
   effort?: ReasoningEffort;
   webSearch?: boolean;
+  siteTools?: boolean;
 };
 const defaultSettings: Settings = { model: automaticModel, type: "chat" };
 const validateAccess = (value: unknown) =>
   typeof value === "string" ? value : "";
 function validateSettings(value: unknown): Settings {
   if (!value || typeof value !== "object") return defaultSettings;
-  const { model, type, effort, webSearch } = value as Partial<Settings>;
+  const { model, type, effort, webSearch, siteTools } =
+    value as Partial<Settings>;
   return {
     model: typeof model === "string" ? model : automaticModel,
     type: isAgentType(type) ? type : "chat",
     effort: isReasoningEffort(effort) ? effort : undefined,
     webSearch: webSearch === true,
+    siteTools: siteTools === true,
   };
 }
 
@@ -120,7 +126,14 @@ function validateHistory(value: unknown): ChatHistory {
           : undefined;
         turns.push(
           { role: "user", content: user.content.slice(0, historyTextLimit) },
-          { role: "assistant", content, citations },
+          {
+            role: "assistant",
+            content,
+            citations,
+            responder: isAgentResponder(assistant.responder)
+              ? assistant.responder
+              : undefined,
+          },
         );
       }
       return [
@@ -157,7 +170,7 @@ function errorMessage(status: number) {
 
 function AgentChat({
   access,
-  settings: { model, type, effort, webSearch },
+  settings: { model, type, effort, webSearch, siteTools },
   turns,
   onReply,
   onNewChat,
@@ -208,6 +221,7 @@ function AgentChat({
       type,
       effort,
       webSearch: webSearch || undefined,
+      siteTools: siteTools || undefined,
       turns: input,
     };
     const encoder = new TextEncoder();
@@ -228,12 +242,13 @@ function AgentChat({
         setError(errorMessage(response.status));
         return;
       }
-      const { text, citations } = (await response.json()) as {
+      const { text, citations, responder } = (await response.json()) as {
         text: string;
         citations?: AgentCitation[];
+        responder?: AgentResponder;
       };
       if (controller.signal.aborted) return;
-      onReply(user, { role: "assistant", content: text, citations });
+      onReply(user, { role: "assistant", content: text, citations, responder });
       setPrompt("");
     } catch {
       if (!controller.signal.aborted) setError(errorMessage(0));
@@ -256,6 +271,7 @@ function AgentChat({
           {model === automaticModel ? t("默认模型") : model} ·{" "}
           {t(agentTypes[type])}
           {webSearch ? ` · ${t("联网搜索")}` : null}
+          {siteTools ? ` · ${t("站内工具")}` : null}
           {effort
             ? ` · ${t("Reasoning")}：${t(reasoningLabels[effort])}`
             : null}
@@ -285,9 +301,18 @@ function AgentChat({
         ) : null}
         {display.map((turn, index) => (
           <article className="agents-message" data-role={turn.role} key={index}>
-            <strong>{turn.role === "user" ? t("你") : "Agents"}</strong>
+            <strong>
+              {turn.role === "user"
+                ? t("你")
+                : turn.responder
+                  ? t(agentTypes[turn.responder])
+                  : "Agents"}
+            </strong>
             {turn.role === "assistant" ? (
-              <AgentMarkdown content={turn.content} citations={turn.citations} />
+              <AgentMarkdown
+                content={turn.content}
+                citations={turn.citations}
+              />
             ) : (
               <div className="agents-message-text">{turn.content}</div>
             )}
@@ -401,6 +426,7 @@ function AgentSetup({
   const [type, setType] = useState(settings.type);
   const [effort, setEffort] = useState(settings.effort);
   const [webSearch, setWebSearch] = useState(Boolean(settings.webSearch));
+  const [siteTools, setSiteTools] = useState(Boolean(settings.siteTools));
   const efforts = reasoningEfforts(
     model === automaticModel ? defaultModel : model,
   );
@@ -429,7 +455,13 @@ function AgentSetup({
             event.preventDefault();
             const value = access || code.trim();
             if (value)
-              onStart(value, { model, type, effort: activeEffort, webSearch });
+              onStart(value, {
+                model,
+                type,
+                effort: activeEffort,
+                webSearch,
+                siteTools,
+              });
           }}
         >
           {!access ? (
@@ -506,14 +538,23 @@ function AgentSetup({
               ))}
             </Select>
           </div>
-          <Button
-            className="button small agents-web-toggle"
-            aria-pressed={webSearch}
-            onClick={() => setWebSearch(!webSearch)}
-          >
-            <Icon name="globe" />
-            {t("联网搜索")}
-          </Button>
+          <div className="agents-tool-toggles">
+            <Button
+              className="button small"
+              aria-pressed={webSearch}
+              onClick={() => setWebSearch(!webSearch)}
+            >
+              <Icon name="globe" />
+              {t("联网搜索")}
+            </Button>
+            <Button
+              className="button small"
+              aria-pressed={siteTools}
+              onClick={() => setSiteTools(!siteTools)}
+            >
+              {t("站内工具")}
+            </Button>
+          </div>
           <div className="agents-toolbar">
             <Button className="button" onClick={onCancel}>
               {t("取消")}

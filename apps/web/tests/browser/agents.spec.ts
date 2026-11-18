@@ -255,3 +255,35 @@ test("Agents renders Markdown from new and cached replies without active HTML", 
     page.getByRole("log").getByText("**原始输入**", { exact: true }),
   ).toBeVisible();
 });
+
+test("auto routing restores the specialist reply and site tools setting", async ({ page }) => {
+  await page.route("**/api/agents", async (route) => {
+    expect(route.request().postDataJSON()).toMatchObject({
+      type: "auto",
+      siteTools: true,
+    });
+    await route.fulfill({
+      json: { text: "ここに翻訳があります。", responder: "translation" },
+    });
+  });
+  await page.goto("/tools/agents");
+  await page.getByRole("button", { name: "会话设置" }).click();
+  const modal = page.getByRole("dialog", { name: "会话设置" });
+  await modal.getByLabel("访问码").fill("browser-test-code");
+  await modal.getByRole("combobox", { name: "会话类型" }).click();
+  await page.getByRole("option", { name: "自动分流" }).click();
+  const tools = modal.getByRole("button", { name: "站内工具" });
+  await expect(tools).toHaveAttribute("aria-pressed", "false");
+  await tools.click();
+  await modal.getByRole("button", { name: "进入聊天" }).click();
+  await page.getByRole("textbox", { name: "输入消息" }).fill("请翻译成日文");
+  await page.getByRole("button", { name: "发送消息" }).click();
+
+  const reply = page.locator("article[data-role=assistant]");
+  await expect(reply.getByText("ここに翻訳があります。")).toBeVisible();
+  await page.reload();
+  await expect(reply.getByText("翻译", { exact: true })).toBeVisible();
+  await expect(reply.getByText("ここに翻訳があります。")).toBeVisible();
+  await page.getByRole("button", { name: "会话设置" }).click();
+  await expect(tools).toHaveAttribute("aria-pressed", "true");
+});

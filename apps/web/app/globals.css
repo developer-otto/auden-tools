@@ -4664,8 +4664,13 @@ html:lang(en) .timeline-city {
   font-size: .85em;
   text-decoration: underline;
 }
-.agents-web-toggle { margin-block-end: 10px; }
-.agents-web-toggle[aria-pressed="true"] {
+.agents-tool-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block-end: 10px;
+}
+.agents-tool-toggles .button[aria-pressed="true"] {
   background: var(--brand-soft);
   border-color: var(--brand);
   color: var(--brand);
